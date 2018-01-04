@@ -1,0 +1,27 @@
+
+
+04.01.2018:
+
+sondemod/sondeudp:
+    - added decoding PilotSonde
+    - added decoding M10 
+    - improve decoding DFM
+    - writing *.cal files to /tmp
+
+sondemod:
+    - write last radiosonde data to /tmp/sonde.csv (parameter -e)
+    - when rinex too old, file /tmp/toold are created
+    - sending decoded data to SP9SKP database https://skp.wodzislaw.pl/sondy
+
+sdrtst:
+    - waterfall on console
+    - write waterfall to /tmp/wtf<number>.bin (parameter -n)
+    - offset to AFC (new parameter in file with frequencies)
+	example:
+	    f 404.000 15 -6500 50 0 24000 # M10
+	    f 401.465 50 1200 0 0 12000   # pilotSonde
+	    f 403.000 5 0 0 70 12000	  # RS41,RS92 and others
+
+www: 
+    - require lighttpd and php
+    - simple monitoring and configuration by web

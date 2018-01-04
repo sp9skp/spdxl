@@ -1,0 +1,45 @@
+compiling hints for C-Sources by OE5HPM@OE5XBL.#OE5.AUT.EU
+
+build for X86 with i386 (32-bit) host system
+or
+build on some native ARM machine (like raspbian on rpi)
+================================================================================
+install following packages:
+- build-essential  (sudo apt-get install build-essential)
+- libX11-dev       (sudo apt-get install libX11-dev)
+- libXext-dev      (sudo apt-get install libXext-dev)
+- libpng-dev       (sudo apt-get install libpng-dev)
+- libjpeg-dev      (sudo apt-get install libjpeg-dev)
+
+make all
+
+build for X86 with i686 (64-bit) host system
+================================================================================
+install following packages:
+- build-essential  (sudo apt-get install build-essential)
+- libX11-dev       (sudo apt-get install libX11-dev)
+- libXext-dev      (sudo apt-get install libXext-dev)
+- zlib1g-dev
+- libjpeg-dev      (sudo apt-get install libjpeg-dev)
+
+make all
+
+cross-build for ARMV6 (raspberry pi) on x86 host system
+================================================================================
+install following packages:
+- build-essential	(sudo apt-get install build-essential)
+- lib32z1			(sudo apt-get install lib32z1)
+- rpi-tools			(git clone https://github.com/raspberrypi/tools.git ~/rpi-tools)
+
+PLATFORM=armv6 CROSS_COMPILE=~/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- make all
+
+cross-build for ARMV7hf (bur am335x pp, bananapi, beaglebone) on x86 host system
+================================================================================
+install following packages:
+- build-essential   (sudo apt-get install build-essential)
+- linaro-toolchain
+	cd ~/
+	wget https://releases.linaro.org/components/toolchain/binaries/latest-5.1/arm-linux-gnueabihf/gcc-linaro-5.1-2015.08-x86_64_arm-linux-gnueabihf.tar.xz
+	tar -xf gcc-linaro-5.1-2015.08-x86_64_arm-linux-gnueabihf.tar.xz
+
+PLATFORM=armv7hf CROSS_COMPILE=/opt/gcc-linaro-5.1-2015.08-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- make all

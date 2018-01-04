@@ -1,0 +1,67 @@
+#!/bin/bash
+
+/root/SDR/RINEX
+
+cp /root/SDR/sdrcfg0.txt /tmp/sdrcfg0.txt
+cp /root/SDR/sdrcfg1.txt /tmp/sdrcfg1.txt
+cp /root/SDR/sdrcfg2.txt /tmp/sdrcfg2.txt
+
+mkfifo /root/SDR/fifo0
+mkfifo /root/SDR/fifo1
+mkfifo /root/SDR/fifo2
+
+chown www-data:www-data /tmp/*.txt
+
+cd /root/SDR
+
+#sleep 20
+
+set -x
+killall -9 rtl_tcp udpgate4 sondemod sondeudp sdrtst screen
+
+if test `find "rinex" -mmin +1440`
+then
+    ./RINEX
+fi
+
+screen -S rs -t bash -A -d -m /bin/bash
+
+
+
+screen -S rs -X screen -t rtl_tcp0
+screen -S rs -p rtl_tcp0 -X stuff $'/usr/local/bin/rtl_tcp0 -a 127.0.0.1 -p 1234 -g 40 -P 0 -d 0 -b 15 \n'
+screen -S rs -X screen -t rtl_tcp1
+screen -S rs -p rtl_tcp1 -X stuff $'/usr/local/bin/rtl_tcp1 -a 127.0.0.1 -p 1235 -g 40 -P 0 -d 1 -b 15 \n'
+screen -S rs -X screen -t rtl_tcp2
+screen -S rs -p rtl_tcp2 -X stuff $'/usr/local/bin/rtl_tcp2 -a 127.0.0.1 -p 1236 -g 40 -P 0 -d 2 -b 15 \n'
+sleep 2
+
+screen -S rs -X screen -t sdrtst0
+screen -S rs -p sdrtst0 -X stuff $'/root/SDR/bin/sdrtst -t 127.0.0.1:1234 -Z 100 -c /tmp/sdrcfg0.txt -v -s /root/SDR/fifo0 -r 25000 -n 1 \n'
+screen -S rs -X screen -t sdrtst1
+screen -S rs -p sdrtst1 -X stuff $'/root/SDR/bin/sdrtst -t 127.0.0.1:1235 -Z 100 -c /tmp/sdrcfg1.txt -v -s /root/SDR/fifo1 -r 25000 -n 2 \n'
+screen -S rs -X screen -t sdrtst2
+screen -S rs -p sdrtst2 -X stuff $'/root/SDR/bin/sdrtst -t 127.0.0.1:1236 -Z 100 -c /tmp/sdrcfg2.txt -v -s /root/SDR/fifo2 -r 16000 -n 3 \n'
+sleep 5
+
+screen -S rd -t bash -A -d -m /bin/bash
+
+screen -S rd -X screen -t sondeudp0
+screen -S rd -p sondeudp0 -X stuff $'/root/SDR/bin/sondeudp -f 25000 -l 128 -c 0 -o /root/SDR/fifo0 -I N0CALL-14 -v -u 127.0.0.1:4000 \n'
+screen -S rd -X screen -t sondeudp1
+screen -S rd -p sondeudp1 -X stuff $'/root/SDR/bin/sondeudp -8 -f 25000 -l 128 -c 0 -o /root/SDR/fifo1 -I N0CALL-14 -v -u 127.0.0.1:4000 \n'
+screen -S rd -X screen -t sondeudp2
+screen -S rd -p sondeudp2 -X stuff $'/root/SDR/bin/sondeudp -8 -1 -f 16000 -l 128 -c 0 -o /root/SDR/fifo2 -I N0CALL-14 -v -u 127.0.0.1:4000 \n'
+
+sleep 5
+
+screen -S rd -X screen -t sondemod
+screen -S rd -p sondemod -X stuff $'while [ 1 ] ; do /root/SDR/bin/sondemod -v -x /tmp/rinex -T 1440 -r 127.0.0.1:4010 -o 4000 -I N0CALL-14 -R 30 -d -A 3000 -B 2 -b 45 -p 0 -K DB_PASS -e 10 ; done\n'
+
+#screen -S rd -X screen -t almanach
+#screen -S rd -p almanach -X stuff $'while [ 1 ] ; do sleep 1800; /root/SDR/RINEX ; done \n'
+
+screen -S rd -X screen -t udpgate
+screen -S rd -p udpgate -X stuff $'/root/SDR/bin/udpgate4 -v -R 127.0.0.1:4011:4010 -s N0CALL-15 -n 20:/root/SDR/beacon.txt  -t 14580 -g poland.aprs2.net:14580 -p APRS_PASS \n'
+
+#radiosondy.info

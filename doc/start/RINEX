@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd /tmp
+/usr/bin/python /root/SDR/getrinex_de.py
