@@ -19,7 +19,7 @@ if (($handle = fopen("/tmp/sonde.csv", "r")) !== FALSE) {
 	echo "</tr>";
     echo "<tr>";
     $row++;
-    echo"<td><a href=\"https://www.google.pl/maps/place/".$data[1].",".$data[2]."\">".$data[0]."</a> &nbsp;<a target=\"_blank\" href=\"http://skp.wodzislaw.pl/sondy/sinfo.php?n=".$data[0]."\">(SKP)</a></td>";
+    echo"<td><a href=\"https://www.google.pl/maps/place/".$data[1].",".$data[2]."\">".$data[0]."</a> &nbsp;<a target=\"_blank\" href=\"https://skp.wodzislaw.pl/sondy/sinfo.php?n=".$data[0]."\">(SKP)</a></td>";
     for ($c=1; $c < $num; $c++) {
         echo "<td>" . $data[$c] . "</td>\n";
     }
