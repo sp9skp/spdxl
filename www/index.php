@@ -18,7 +18,7 @@ function getData(){
     }
     request.open("GET", "sondy.php", true);
     request.send(null);
-    setTimeout('getData()', 2000);
+    setTimeout('getData()', 1000);
 }
 function getDataWf(){
     nocache = "&nocache="+ Math.random() * 1000000;
@@ -72,6 +72,7 @@ if($p=='0' || $p=='') echo "<p id=\"switch_txt\"></p>";
 if($p=='1' || $p=='2' || $p=='3' || $p=='4' ) include 'sdr.php'; 
 if($p=='A') echo "<p id=\"switch_txt\"></p>";
 
+// include 'wf.php';
 ?>
 
 

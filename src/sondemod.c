@@ -87,7 +87,7 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_FASTALM 4
 /* reread almanach if old */
 
-char save2csv;
+uint32_t save2csv;
 
 typedef char FILENAME[1024];
 
@@ -284,9 +284,29 @@ struct CONTEXTPS {
    uint32_t lastframe;
    
 };
-
-
 static OBJNAME pilname;    // <-added for pilot sonde
+
+struct DBS{
+
+    char name[20];
+    double lat;
+    double lon;
+    double alt;
+    double speed;
+    double climb;
+    float dir;
+    double frq;
+    time_t time;
+    time_t sendtime;
+
+    unsigned int frameno;
+    int typ;
+    char bk;
+    unsigned int swv;
+    double ozon;
+    char aux;
+    double press;
+} dBs[30];
 
 static FILENAME semfile;
 
@@ -391,42 +411,29 @@ const char* getfield(char* line, int num)
     return NULL;
 }
 
-int save_tmp(char *name,double lat, double lon, double alt,double speed, double climb, double dir,float frq)
+int save_csv()
 {
 
 
-    FILE* stream = fopen("/tmp/sonde.csv", "r");
+    FILE* stream;
     char tab[30][200],str[200];
     char line[200];
-    char cnt=0,rep=0,i ;
-
-    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f\n",name,lat,lon,alt,speed,climb,dir,frq);
-    
-    if(stream!=NULL){
-        while (fgets(line, 200, stream) && cnt<save2csv )
-        {
-            char* tmp = strdup(line);
-            if(strcmp(getfield(tmp, 1),name)!=0){
-                strcpy(tab[cnt],line);
-            }
-	    else{
-		strcpy(tab[cnt],str);
-		rep=1;
-	    }
-            cnt++;
-            free(tmp);
-        }
-    fclose(stream);
-    }
+    char cnt=0,rep=0,i,j ;
+    uint32_t time_last=0;
+    double dlat,dlon;
 
     stream = fopen("/tmp/sonde.csv", "w");
 
-    if(rep==0)
-	fputs(str,stream);
-    for(i=0;i<cnt;i++){
-        fputs(tab[i],stream);
+    for(i=30;i>-1;i--){
+	if(dBs[i].name[0]!=0){
+	    //dlat=X2C_DIVL(dBs[i].lat,1.7453292519943E-2);
+	    //dlon=X2C_DIVL(dBs[i].lon,1.7453292519943E-2);
+
+	    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[i].name,dBs[i].lat,dBs[i].lon,dBs[i].alt,dBs[i].speed,dBs[i].climb,dBs[i].dir,dBs[i].frq,dBs[i].time);
+	    fputs(str,stream);
+	}
     }
-    fclose(stream);
+    if(stream) fclose(stream);
 }
 
 
@@ -484,8 +491,6 @@ unsigned int passAprs(char *pas){
 
 void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq){
     char str[1024];
-    time_t now;
-    time(&now);
     char hash[40];
 
     CURL *curl;
@@ -497,50 +502,101 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
     char cp=strlen(mycall);
     double dlat,dlon;
 
-    dlat=X2C_DIVL(lat,1.7453292519943E-2);
-    dlon=X2C_DIVL(lon,1.7453292519943E-2);
+    if((dp>4)||(cp>3)){
+
+	if(dp<4){	//jesli nie ma mojego hasla 
+	    sprintf(str,"%u",passAprs(mycall)); //generujemy auto z znaku delikwenta
+    	    strcpy(Pass,str);
+	}
+	strcpy(Pass,dbPass);
+	str[0]=0;
+
+	curl = curl_easy_init();
+	if ( curl ){
+    	    curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_data );
+    	    curl_easy_setopt( curl, CURLOPT_URL, dbAddr );
     
-    if(save2csv) save_tmp(name,dlat,dlon,alt,speed,climb,dir,frq);
+    	    sprintf( PostFields, "d=%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%s",
+                                name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,mycall);
+    	    //wylicznie hasha
+    	    strcpy(ToHash,PostFields+2);
+    	    strcat(ToHash,Pass);
+    	    char *hash = str2md5(ToHash, strlen(ToHash));
 
-if((dp>4)||(cp>3)){
+    	    //dopisanie hasha
+    	    strcat(PostFields,";");
+    	    strcat(PostFields,hash);
+    	    curl_easy_setopt( curl, CURLOPT_POSTFIELDS, PostFields );
 
-    if(dp<4){	//jesli nie ma mojego hasla 
-	sprintf(str,"%u",passAprs(mycall)); //generujemy auto z znaku delikwenta
-	strcpy(Pass,str);
+    	    // Perform the request, res will get the return code
+    	    res = curl_easy_perform( curl );
+
+    	    // Check for errors
+    	    if ( res == CURLE_OK ) { printf( "Uploaded data\n"); }
+    	    else { printf( "curl_easy_perform() failed: %s\n", curl_easy_strerror( res ) ); }
+
+    	    // always cleanup
+    	    curl_easy_cleanup( curl );
+	}
     }
-    strcpy(Pass,dbPass);
-    str[0]=0;
-
-    curl = curl_easy_init();
-    if ( curl ){
-        curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_data );
-        curl_easy_setopt( curl, CURLOPT_URL, dbAddr );
-
-        sprintf( PostFields, "d=%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%s",
-                                name,dlat,dlon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,mycall);
-        //wylicznie hasha
-        strcpy(ToHash,PostFields+2);
-        strcat(ToHash,Pass);
-        char *hash = str2md5(ToHash, strlen(ToHash));
-
-        //dopisanie hasha
-        strcat(PostFields,";");
-        strcat(PostFields,hash);
-        //printf(PostFields);printf("\n");
-        curl_easy_setopt( curl, CURLOPT_POSTFIELDS, PostFields );
-
-        // Perform the request, res will get the return code
-        res = curl_easy_perform( curl );
-
-        // Check for errors
-        if ( res == CURLE_OK ) { printf( "Uploaded data\n"); }
-        else { printf( "curl_easy_perform() failed: %s\n", curl_easy_strerror( res ) ); }
-
-        // always cleanup
-        curl_easy_cleanup( curl );
-        }
 }
+
+
+int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq){
+
+    char i,newS=1;
+    time_t minTime=0,difftime;
+    char oldestPos=0,soNum=-1;
+
+
+    i=0;
+    while(dBs[i].name[0]!=0 && i<30 && soNum<0){
+
+	if (minTime>dBs[i].time){	
+	    minTime=dBs[i].time;
+	    oldestPos=i;
+	}
+
+	if(strcmp(dBs[i].name,name)==0){
+	    soNum=i;				
+	    newS=0;				
+	}
+	else
+	    i++;				
+    }
+
+    if(i==30){					
+	i=oldestPos;
+    }
+    if(soNum>-1){				
+	i=soNum;				
+	difftime=time(NULL)-dBs[i].sendtime;	
+    }
+
+    strcpy(dBs[i].name,name);
+    dBs[i].lat=X2C_DIVL(lat,1.7453292519943E-2);
+    dBs[i].lon=X2C_DIVL(lon,1.7453292519943E-2);
+    dBs[i].alt=alt;
+    dBs[i].speed=speed;
+    dBs[i].climb=climb;
+    dBs[i].dir=dir;
+    dBs[i].frq=frq;
+    dBs[i].time=time(NULL);
+    dBs[i].frameno=frameno;
+    dBs[i].typ=typ;
+    dBs[i].bk=bk;
+    dBs[i].swv=swv;
+    dBs[i].ozon=ozon;
+    dBs[i].aux=aux;
+    dBs[i].press=press;
+
+    if(alt<3000 || difftime>14 || newS){
+	saveMysql( name, frameno, dBs[i].lat, dBs[i].lon, alt, speed, dir, climb, typ, bk, swv, ozon, aux, press, frq);
+	dBs[i].sendtime=time(NULL);
+    }
+    if(save2csv) save_csv();
 }
+ 
 
 //-SKP
 
@@ -720,11 +776,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='e') {
-            osi_NextArg(h, 1024ul);
-            i = 0UL;
-            if (!GetNum(h, 1024ul, 0, &i, &save2csv)) {
-               Error("-e <no>", 7ul);
-            }
+            save2csv=1;
          }
          else if (h[1U]=='v') sondeaprs_verb = 1;
          else if (h[1U]=='V') {
@@ -756,7 +808,7 @@ static void Parms(void)
                osi_WrStrLn(" -x <filename>  gps almanach rinexnavigation format (prefered)", 63ul);
                osi_WrStrLn(" -y <filename>  gps almanach yuma format (DO NOT USE, not exact)", 65ul);
 	       osi_WrStrLn(" -K <password>  password for SP9SKP database", 45ul);
-	       osi_WrStrLn(" -e <num>       write last <num> radiosonde data to /tmp/sonde.csv", 66ul);
+	       osi_WrStrLn(" -e             write last 30 radiosondes data to /tmp/sonde.csv", 66ul);
                osi_WrStrLn("example: sondemod -o 18000 -x almanach.txt -d -A 1500 -B 10 -I OE0AAA -r 127.0.0.1:9001", 88ul);
                X2C_ABORT();
             }
@@ -1778,7 +1830,7 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                 calperc(anonym1->calibok), 0UL,0.0, sondeaprs_nofilter,"RS92",5,0);
          anonym1->framesent = 1;
     //SKP
-        saveMysql( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz);
+        store_sonde_db( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz);
  
       }
       crdone = 1;
@@ -2295,7 +2347,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
                 sondeaprs_nofilter,"C34",4,0);
             anonym2->lastsent = systime;
 	    //SKP
-            saveMysql(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq);
+            store_sonde_db(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq);
          }
       }
    }
@@ -2304,213 +2356,9 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
 
 /*------------------------------ DFM06 */
 
-static uint32_t bits2val(const char b[], uint32_t b_len,
-                uint32_t from, uint32_t len)
-{
-   uint32_t n;
-   n = 0UL;
-   while (len>0UL) {
-      n = n*2UL+(uint32_t)b[from];
-      ++from;
-      --len;
-   }
-   return n;
-} /* end bits2val() */
-
-#define sondemod_DIST 10
-/*km*/
-
-
-static void jumpcheck(float p1, float p2, uint32_t * cnt)
-{
-   if (p2!=0.0f && (float)fabs(p1-p2)>1.5707963267949E-3f) *cnt = 30UL;
-   else if (*cnt>0UL) --*cnt;
-} /* end jumpcheck() */
-
-
-static void checkdf69(float long0, char * df9)
-{
-   *df9 = long0<30.0f; /* if long<30 it is df6 lat else is df9 long */
-} /* end checkdf69() */
 
 static uint32_t sondemod_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
                 181UL,212UL,243UL,273UL,304UL,334UL};
-
-
-static void decodesub(const char b[], uint32_t b_len,
-                pCONTEXTDFM6 pc, uint32_t subnum)
-{
-   uint32_t u;
-   uint32_t v;
-   int32_t vi;
-   double vr;
-   switch (bits2val(b, b_len, 48UL, 4UL)) {
-   case 0UL:
-      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
-         /* dfm09 speed */
-         u = bits2val(b, b_len, 32UL, 16UL);
-         vr = (double)u*0.01;
-         if (vr<999.0) {
-            pc->speed = vr;
-            pc->tspeed = systime;
-         }
-         if (sondeaprs_verb) {
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)u*0.036f, 1L, 0UL);
-            osi_WrStr("km/h", 5ul);
-         }
-      }
-      break;
-   case 1UL:
-      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
-         /* dfm09 lat, dir */
-         vi = (int32_t)bits2val(b, b_len, 0UL, 32UL);
-         u = bits2val(b, b_len, 32UL, 16UL);
-         vr = (double)vi*1.E-7;
-         if (vr<89.9 && vr>(-89.9)) {
-            pc->lat1 = pc->lat;
-            pc->tlat1 = pc->tlat;
-            pc->lat = vr*1.7453292519943E-2;
-            pc->tlat = systime;
-            pc->posok = 1;
-            jumpcheck((float)pc->lat, (float)pc->lat1, &pc->poserr);
-         }
-         vr = (double)u*0.01;
-         if (vr<=360.0) {
-            pc->dir = vr;
-            pc->tdir = systime;
-         }
-         if (sondeaprs_verb) {
-            osi_WrStr(" Lat: ", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)),
-                5L, 0UL);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)u*0.01f, 1L, 0UL);
-            osi_WrStr(" deg", 5ul);
-         }
-      }
-      break;
-   case 2UL:
-      vi = (int32_t)bits2val(b, b_len, 0UL, 32UL);
-      vr = (double)vi*1.E-7;
-      checkdf69((float)vr, &X2C_CHKNIL(pCONTEXTDFM6,pc)->d9);
-                /* test if dfm6 or dfm9 */
-      if (pc->d9) {
-         /* dfm09 long clb */
-         if (vr<180.0 && vr>(-180.0)) {
-            pc->lon1 = pc->lon; /* save 2 values for extrapolating */
-            pc->tlon1 = pc->tlon;
-            pc->lon = vr*1.7453292519943E-2;
-            pc->tlon = systime;
-            pc->posok = 1;
-            jumpcheck((float)pc->lon, (float)pc->lon1, &pc->poserr);
-         }
-         vi = (int32_t)bits2val(b, b_len, 32UL, 16UL);
-         if (vi>=32768L) vi -= 65536L;
-         vr = (double)vi*0.01;
-         if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
-         if (sondeaprs_verb) {
-            osi_WrStr(" Long:", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)),
-                5L, 0UL);
-            osic_WrFixed((float)pc->clmb, 1L, 0UL);
-            osi_WrStr(" m/s", 5ul);
-         }
-      }
-      else {
-         /* dfm06 lat speed */
-         u = bits2val(b, b_len, 32UL, 16UL);
-         if (vr<89.9 && vr>(-89.9)) {
-            pc->lat1 = pc->lat;
-            pc->tlat1 = pc->tlat;
-            pc->lat = vr*1.7453292519943E-2;
-            pc->tlat = systime;
-            pc->posok = 1;
-            jumpcheck((float)pc->lat, (float)pc->lat1, &pc->poserr);
-         }
-         vr = (double)u*0.01;
-         if (vr<999.0) {
-            pc->speed = vr;
-            pc->tspeed = systime;
-         }
-         if (sondeaprs_verb) {
-            osi_WrStr(" Lat: ", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)),
-                5L, 0UL);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)u*0.036f, 1L, 0UL);
-            osi_WrStr("km/h", 5ul);
-         }
-      }
-      break;
-   case 3UL: /* dfm09 alt */
-      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
-         v = bits2val(b, b_len, 0UL, 32UL);
-         vr = (double)v*0.01;
-         if (vr<50000.0) {
-            pc->alt = vr;
-            pc->talt = systime;
-         }
-         if (sondeaprs_verb) {
-            osi_WrStr(" alti:", 7ul);
-            osic_WrFixed((float)pc->alt, 1L, 0UL);
-            osi_WrStr("m ", 3ul);
-         }
-      }
-      else {
-         /* dfm06 long, dir */
-         vi = (int32_t)bits2val(b, b_len, 0UL, 32UL);
-         u = bits2val(b, b_len, 32UL, 16UL);
-         vr = (double)vi*1.E-7;
-         if (vr<180.0 && vr>(-180.0)) {
-            pc->lon1 = pc->lon; /* save 2 values for extrapolating */
-            pc->tlon1 = pc->tlon;
-            pc->lon = vr*1.7453292519943E-2;
-            pc->tlon = systime;
-            pc->posok = 1;
-            jumpcheck((float)pc->lon, (float)pc->lon1, &pc->poserr);
-         }
-         vr = (double)u*0.01;
-         if (vr<=360.0) {
-            pc->dir = vr;
-            pc->tdir = systime;
-         }
-         if (sondeaprs_verb) {
-            osi_WrStr(" Long:", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)),
-                5L, 0UL);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)u*0.01f, 1L, 0UL);
-            osi_WrStr(" deg", 5ul);
-         }
-      }
-      break;
-   case 4UL:
-      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
-      }
-      else {
-         /* dfm06 alt, speed */
-         v = bits2val(b, b_len, 0UL, 32UL);
-         vi = (int32_t)bits2val(b, b_len, 32UL, 16UL);
-         vr = (double)v*0.01;
-         if (vr<50000.0) {
-            pc->alt = vr;
-            pc->talt = systime;
-         }
-         if (vi>=32768L) vi -= 65536L;
-         vr = (double)vi*0.01;
-         if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
-         if (sondeaprs_verb) {
-            osi_WrStr(" alti:", 7ul);
-            osic_WrFixed((float)pc->alt, 1L, 0UL);
-            osi_WrStr("m ", 3ul);
-            osic_WrFixed((float)pc->clmb, 1L, 0UL);
-            osi_WrStr(" m/s", 5ul);
-         }
-      }
-      break;
-   } /* end switch */
-} /* end decodesub() */
 
 
 static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t fromport)
@@ -2641,18 +2489,6 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     pc->tused = systime;
     pc->posok = 1;
 
-/*
-         sondeaprs_senddata(anonym1->lat, anonym1->long0, anonym1->heig,
-                anonym1->speed, anonym1->dir, anonym1->climb, anonym1->hp,
-                anonym1->hyg, anonym1->temp, anonym1->ozon,
-                anonym1->ozontemp, 0.0, 0.0, (double)mhz,
-                (double)anonym1->hrmsc, (double)anonym1->vrmsc,
-                (anonym1->timems/1000UL+86382UL)%86400UL, frameno, objname,
-                9ul, almanachage, anonym1->goodsats, usercall, 11ul,
-                calperc(anonym1->calibok), 0UL,0.0, sondeaprs_nofilter);
-*/
-
-
     { struct CONTEXTDFM6 * anonym = X2C_CHKNIL(pCONTEXTDFM6,pc);
 
 
@@ -2668,7 +2504,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
                                   0UL, 0.0, sondeaprs_nofilter,typ,5,Vcc );
 
             anonym->lastsent = osic_time();
-            saveMysql(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq);
+            store_sonde_db(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq);
         }
     }
     
@@ -3227,7 +3063,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 sondeaprs_nofilter,"RS41",5,0);
       pc->framesent = 1;
       //SKP
-      saveMysql( X2C_CHKNIL(pCONTEXTR4,pc)->name,frameno,lat,long0,heig,speed,dir,climb,4,X2C_CHKNIL(pCONTEXTR4,pc)->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)X2C_CHKNIL(pCONTEXTR4,pc)->mhz0);
+      store_sonde_db( X2C_CHKNIL(pCONTEXTR4,pc)->name,frameno,lat,long0,heig,speed,dir,climb,4,X2C_CHKNIL(pCONTEXTR4,pc)->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)X2C_CHKNIL(pCONTEXTR4,pc)->mhz0);
 
    }
 /*  IF verb THEN WrStrLn("") END;   */
@@ -3450,7 +3286,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
         	X2C_CHKNIL(pCONTEXTM10,pc)->gpssecond, pc->framenum, X2C_CHKNIL(pCONTEXTM10,pc)->name, 9ul, 0UL, 0, usercall,
                 11ul, 0UL, 0UL,0, sondeaprs_nofilter,"M10",4,0);
       
-      saveMysql( X2C_CHKNIL(pCONTEXTM10,pc)->name,pc->framenum,lat*1.7453292519943E-2,lon*1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq);
+      store_sonde_db( X2C_CHKNIL(pCONTEXTM10,pc)->name,pc->framenum,lat*1.7453292519943E-2,lon*1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq);
 
 
       pc->framesent = 1;
@@ -3734,7 +3570,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
         	gpstime, 0.0, pc->name, 9ul, 0UL, pgoodsat, usercall,
                 11ul, 0UL, 0UL,0, sondeaprs_nofilter,"PilS",5,0);
       
-      saveMysql( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq);
+      store_sonde_db( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq);
       
       pc->framesent = 1;
    }
@@ -3792,7 +3628,7 @@ static void udprx(void)
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   char ip[50];
+   char ip[50],i;
 
    if(h2ip("skp.wodzislaw.pl",ip)){
     printf("\r\nCan't resolve DNS address\r\n");
@@ -3800,6 +3636,8 @@ extern int main(int argc, char **argv)
    }
    sprintf(dbAddr,"http://%s:81/sondy.php",ip);
 
+   for(i=0;i<30;i++)
+    dBs[i].name[0]=0;
 
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
