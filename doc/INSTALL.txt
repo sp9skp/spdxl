@@ -1,0 +1,42 @@
+INSTALACJA SPdxl:
+
+apt-get install openssl libcurl4-openssl-dev libssl-dev build-essential git screen mc
+
+cd /usr/src
+git clone https://github.com/sp9skp/spdxl.git
+cd spdxl/src
+make clean
+make sondemod sondeudp sdrtst udpgate4
+
+mkdir /root/SDR
+mkdir /root/SDR/bin
+cp sondemod sondeudp sdrtst udpgate4 /root/SDR/bin
+
+W katalogu /usr/src/spdxl/doc/start jest przykładowy skrypt startowy dla 3 SDRów oraz pozostałe pliki konfiguracyjne.
+
+
+INSTALACJA interfejsu WWW:
+
+apt-get purge apache2
+
+Instalujemy serwer www zgodnie z opisem:
+http://malinowepi.pl/post/40685427538/serwer-www-i-php
+
+Kasujemy zawartość katalogu /var/www a następnie kopiujemy do niego pliki z katalogu /usr/src/spdxl/www 
+
+cp /usr/src/spdxl/www/* /var/www
+
+
+AKTUALIZACJA:
+
+cd /usr/src/spdxl
+git pull
+cd src
+make clean
+make sondemod sondeudp sdrtst udpgate4
+
+killall -9 screen sondemod sondeudp sdrtst udpgate4
+
+cp sondemod sondeudp sdrtst udpgate4 /root/SDR/bin
+
+cp /usr/src/spdxl/www/* /var/www

@@ -1,4 +1,13 @@
+20.01.2018:
 
+    - simle install instructions in doc
+
+19.01.2018:
+
+sondemod:
+    - new sonde.csv (processing in RAM), 
+    - frame time & distance in www, 
+    - sending to skp server every 15 sec when sonde above 3km
 
 04.01.2018:
 

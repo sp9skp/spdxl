@@ -7,7 +7,7 @@
 <body>
 <div align="center">
 <table width="700" border="1" cellpadding="3" cellspacing="0">
-<tr><th> Name </th><th> Latitude </th> <th> Longitude </th> <th> Altitude </th><th>Speed [m/s]/[km/h]</th> <th> Climb </th> <th> Dir </th><th> Freq </th><th>Lat frame </th><th>Dist[km]</th></tr>
+<tr><th> Name </th><th> Latitude </th> <th> Longitude </th> <th> Altitude </th><th>Speed [m/s]/[km/h]</th> <th> Climb </th> <th> Dir </th><th> Freq </th><th>Last frame </th><th>Dist[km]</th></tr>
 <?php
 
 include 'SET.php';
