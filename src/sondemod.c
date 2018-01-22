@@ -418,17 +418,14 @@ int save_csv()
     FILE* stream;
     char tab[30][200],str[200];
     char line[200];
-    char cnt=0,rep=0,i,j ;
+    int cnt=0,rep=0,i,j ;
     uint32_t time_last=0;
     double dlat,dlon;
 
     stream = fopen("/tmp/sonde.csv", "w");
 
-    for(i=30;i>-1;i--){
+    for(i=29;i>-1;i--){
 	if(dBs[i].name[0]!=0){
-	    //dlat=X2C_DIVL(dBs[i].lat,1.7453292519943E-2);
-	    //dlon=X2C_DIVL(dBs[i].lon,1.7453292519943E-2);
-
 	    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[i].name,dBs[i].lat,dBs[i].lon,dBs[i].alt,dBs[i].speed,dBs[i].climb,dBs[i].dir,dBs[i].frq,dBs[i].time);
 	    fputs(str,stream);
 	}
@@ -544,7 +541,7 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 
 int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq){
 
-    char i,newS=1;
+    int i,newS=1;
     time_t minTime=0,difftime;
     char oldestPos=0,soNum=-1;
 
