@@ -22,6 +22,31 @@ apt-get purge apache2
 Instalujemy serwer www zgodnie z opisem:
 http://malinowepi.pl/post/40685427538/serwer-www-i-php
 
+
+Gdyby wyskoczyl blad braku php5 instalujemy php7:
+
+apt-get install lighttpd php-cgi
+
+modyfikujemy
+
+nano /etc/php/7.0/cgi/php.ini
+dopisując
+cgi.fix_pathinfo=1
+
+oraz 
+
+nano /etc/lighttpd/lighttpd.conf
+
+dopisujac:
+
+fastcgi.server = ( ".php" => ((
+"bin-path" => "/usr/bin/php-cgi",
+"socket" => "/tmp/php.socket"
+)))
+
+
+
+
 Kasujemy zawartość katalogu /var/www a następnie kopiujemy do niego pliki z katalogu /usr/src/spdxl/www 
 
 cp /usr/src/spdxl/www/* /var/www
