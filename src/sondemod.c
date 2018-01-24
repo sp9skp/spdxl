@@ -611,7 +611,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
 
     int i,newS=1;
     time_t minTime=time(NULL),difftime;
-    char oldestPos=0,soNum=-1;
+    int oldestPos=0,soNum=-1;
 
 
     i=0;
