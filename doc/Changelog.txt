@@ -1,6 +1,9 @@
+24.01.2018:
+    - read sonde.csv file on start
+
 20.01.2018:
 
-    - simle install instructions in doc
+    - simple install instructions in doc
 
 19.01.2018:
 

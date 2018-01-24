@@ -434,6 +434,72 @@ int save_csv()
 }
 
 
+int read_csv()
+{
+
+
+    FILE* stream;
+    char tab[30][200],str[200];
+    char line[200];
+    int cnt=0,rep=0,i,j ;
+    uint32_t time_last=0;
+    double dlat,dlon;
+
+    char *txt;
+
+    stream = fopen("/tmp/sonde.csv", "r");
+
+    if(stream){
+        cnt=0;
+        while (fgets(line, 200, stream) && cnt<30 )
+        {
+	    
+            char* tmp = strdup(line);
+            txt=strtok(tmp,";");
+            i=0;
+            while(txt!=NULL){
+                switch(i){
+                    case 0:
+			strcpy(dBs[cnt].name,txt);
+			break;
+                    case 1:
+			dBs[cnt].lat=atof(txt);
+			break;
+                    case 2:
+			dBs[cnt].lon=atof(txt);
+			break;
+                    case 3:
+			dBs[cnt].alt=atol(txt);
+			break;
+                    case 4:
+			dBs[cnt].speed=atof(txt);
+			break;
+                    case 5:
+			dBs[cnt].climb=atof(txt);
+			break;
+                    case 6:
+			dBs[cnt].dir=atof(txt);
+			break;
+                    case 7:
+			dBs[cnt].frq=atof(txt);
+			break;
+                    case 8:
+			dBs[cnt].time=atol(txt);
+			break;
+                }
+		i++;
+		txt= strtok(NULL, ";");
+            }
+
+            cnt++;
+            free(tmp);
+        }
+        fclose(stream);
+    }
+
+}
+
+
 
 char *str2md5(const char *str, int length) {
     int n;
@@ -539,10 +605,12 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 }
 
 
+
+
 int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq){
 
     int i,newS=1;
-    time_t minTime=0,difftime;
+    time_t minTime=time(NULL),difftime;
     char oldestPos=0,soNum=-1;
 
 
@@ -3635,6 +3703,8 @@ extern int main(int argc, char **argv)
 
    for(i=0;i<30;i++)
     dBs[i].name[0]=0;
+
+   read_csv();
 
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
