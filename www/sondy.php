@@ -7,7 +7,7 @@
 <body>
 <div align="center">
 <table width="700" border="1" cellpadding="3" cellspacing="0">
-<tr><th> Name </th><th> Latitude </th> <th> Longitude </th> <th> Altitude </th><th>Speed [m/s]/[km/h]</th> <th> Climb </th> <th> Dir </th><th> Freq </th><th>Last frame </th><th>Dist[km]</th></tr>
+<tr><th> Name </th><th> Database </th><th> Latitude </th> <th> Longitude </th> <th> Altitude </th><th>Speed [m/s]/[km/h]</th> <th> Climb </th> <th> Dir </th><th> Freq </th><th>Lat frame </th><th>Dist[km]</th></tr>
 <?php
 
 include 'SET.php';
@@ -45,7 +45,8 @@ if (($handle = fopen("/tmp/sonde.csv", "r")) !== FALSE) {
     $row++;
     $speed=$data[4]." / ".intval($data[4]*3.6);
     $data[4]=$speed;
-    echo"<td><a href=\"https://www.google.pl/maps/place/".$data[1].",".$data[2]."\">".$data[0]."</a>&nbsp;<a target=\"_blank\" href=\"https://skp.wodzislaw.pl/sondy/sinfo.php?n=".$data[0]."\">(SKP)</a></td>";
+    echo"<td align=center><a href=\"https://www.google.pl/maps/place/".$data[1].",".$data[2]."\" target=\"_blank\">".$data[0]."</a></td><td> <a target=\"_blank\" href=\"https://skp.wodzislaw.pl/sondy/sinfo.php?n=".$data[0]."\">SKP</a>/".
+	"<a target=\"_blank\" href=\"https://aprs.fi/#!call=a%2F".$data[0]."&timerange=3600&tail=3600\">APRS</a>/<a target=\"_blank\" href=\"https://radiosondy.info/sonde_archive.php?sondenumber=".$data[0]."\">KXY</a></td>";
     for ($c=1; $c < $num-1; $c++) {
         echo "<td align=center>" . $data[$c] . "</td>";
     }

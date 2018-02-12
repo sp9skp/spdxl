@@ -1024,7 +1024,6 @@ extern int main(int argc, char **argv)
    if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn)) {
       rdconfig();
       updateChanT();
-//      file_is_modified(parmfn);
       sndw = 0UL;
       fd = osi_OpenWrite(soundfn, 1001ul);
       if (fd>=0L) {

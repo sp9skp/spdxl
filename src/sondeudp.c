@@ -3257,20 +3257,25 @@ static char sendDFM(uint32_t m){
         tmp[4] = chan[m].freq[4];
         tmp[5] = chan[m].freq[5];
 	tmp[6] = 0;
-	strcat(s,tmp);
+	if(strlen(tmp)>2)
+	    strcat(s,tmp);
+	else
+	    strcat(s,"000000");
 
-        float t = get_Temp(chan[m].dfm6.meas24);
-        if (t > -270.0) sprintf(tmp,"%04.0f", (t+273)*10);
+        float t = get_Temp(chan[m].dfm6.meas24);	
+        if (t > -270.0) {
+	    sprintf(tmp,"%04.0f", (t+273)*10);
+	    tmp[4]=0;
+	}
 	else sprintf(tmp,"0000");
 	strcat(s,tmp);
 
-        if ((chan[m].dfm6.sonde_typ & 0xFF) == 9) {
-            sprintf(tmp,"%04.0f", chan[m].dfm6.status[0]*100);	// u
+        if ((chan[m].dfm6.sonde_typ & 0xFF) == 9) {				
+            sprintf(tmp,"%04.0f", chan[m].dfm6.status[0]*100);	
 	    tmp[4]=0;
 	    strcat(s,tmp);
-            sprintf(tmp,"%05.0f", chan[m].dfm6.status[1]*100);	// t
+            sprintf(tmp,"%05.0f", chan[m].dfm6.status[1]*100);	
 	    tmp[5]=0;
-	    strcat(s,tmp);
         }
 	else sprintf(tmp,"000000000");
 	strcat(s,tmp);
@@ -3278,7 +3283,7 @@ static char sendDFM(uint32_t m){
 	
         tmp[16]=0;
         strcat(s,tmp);
-
+	printf("%s\r\n",s);
 	alludp(chan[m].udptx, 88, s, 88);
 
     }
