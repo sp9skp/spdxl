@@ -1,0 +1,8 @@
+#!/bin/bash
+ps cax | grep rtl_tcp > /dev/null
+if [ $? -ne 0 ]; then
+  echo "Restart SDR(0)"
+  killall -9 screen
+  /root/SDR/START
+  sleep 30
+fi

@@ -87,7 +87,7 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_FASTALM 4
 /* reread almanach if old */
 
-uint32_t save2csv;
+uint32_t save2csv, disSKP=0;
 
 typedef char FILENAME[1024];
 
@@ -552,6 +552,7 @@ unsigned int passAprs(char *pas){
     return hash;
 }
 
+
 void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq){
     char str[1024];
     char hash[40];
@@ -612,6 +613,15 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     int i,newS=1;
     time_t minTime=time(NULL),difftime;
     int oldestPos=0,soNum=-1;
+    FILE * band_lock;
+
+    if (alt<2000){
+	band_lock=fopen("/tmp/band_lock","w+");
+	if (band_lock){
+    	    fprintf(band_lock,"%s alt: %f",name, alt);
+    	    fclose(band_lock);
+	}
+    }
 
 
     i=0;
@@ -843,6 +853,10 @@ static void Parms(void)
          else if (h[1U]=='e') {
             save2csv=1;
          }
+         else if (h[1U]=='S') {
+            disSKP=1;
+         }
+
          else if (h[1U]=='v') sondeaprs_verb = 1;
          else if (h[1U]=='V') {
             sondeaprs_verb = 1;
@@ -874,6 +888,7 @@ static void Parms(void)
                osi_WrStrLn(" -y <filename>  gps almanach yuma format (DO NOT USE, not exact)", 65ul);
 	       osi_WrStrLn(" -K <password>  password for SP9SKP database", 45ul);
 	       osi_WrStrLn(" -e             write last 30 radiosondes data to /tmp/sonde.csv", 66ul);
+	       osi_WrStrLn(" -D             Disable sending to SKP database", 47ul);	
                osi_WrStrLn("example: sondemod -o 18000 -x almanach.txt -d -A 1500 -B 10 -I OE0AAA -r 127.0.0.1:9001", 88ul);
                X2C_ABORT();
             }
@@ -3694,13 +3709,14 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    char ip[50],i;
-
-   if(h2ip("skp.wodzislaw.pl",ip)){
-    printf("\r\nCan't resolve DNS address\r\n");
-    return 0;
+   
+   if(disSKP==0){
+	if(h2ip("skp.wodzislaw.pl",ip)){
+	    printf("\r\nCan't resolve DNS address\r\n");
+	    return 0;
+	}
+	sprintf(dbAddr,"http://%s:81/sondy.php",ip);
    }
-   sprintf(dbAddr,"http://%s:81/sondy.php",ip);
-
    for(i=0;i<30;i++)
     dBs[i].name[0]=0;
 

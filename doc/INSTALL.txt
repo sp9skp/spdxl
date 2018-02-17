@@ -1,6 +1,6 @@
 INSTALACJA SPdxl:
 
-apt-get install openssl libcurl4-openssl-dev libssl-dev build-essential git screen mc
+apt-get install openssl libcurl4-openssl-dev libssl-dev build-essential git screen mc p7zip-full
 
 cd /usr/src
 git clone https://github.com/sp9skp/spdxl.git
@@ -37,19 +37,64 @@ oraz
 
 nano /etc/lighttpd/lighttpd.conf
 
-dopisujac:
+dopisujac w sekcji server.modules linię:
+
+    "mod_auth",
+
+oraz na koncu pliku dodajemy
 
 fastcgi.server = ( ".php" => ((
 "bin-path" => "/usr/bin/php-cgi",
 "socket" => "/tmp/php.socket"
 )))
 
+auth.debug = 2
+auth.backend = "plain"
+auth.backend.plain.userfile = "/etc/lighttpd/.lighttpdpassword"
+
+auth.require = ( "/" =>
+(
+"method" => "basic",
+"realm" => "Password protected area",
+"require" => "user=spDXL"
+)
+)
+
+Wskazane by bylo rowniez zmodyfikowanie linii z miejscem zapisu logow na:
+server.errorlog             = "/tmp/lighttpd_error.log"
 
 
+Tworzymy plik z haslem:
 
-Kasujemy zawartość katalogu /var/www a następnie kopiujemy do niego pliki z katalogu /usr/src/spdxl/www 
+touch /etc/lighttpd/.lighttpdpassword
 
-cp /usr/src/spdxl/www/* /var/www
+edytujemy go:
+nano /etc/lighttpd/.lighttpdpassword
+
+dopisujac linie z uzytkownikiem i haslem:
+
+spDXL:NaSzEhaSlO
+
+Zapisujemy i wykonujemy polecenie:
+
+lighttpd-enable-mod fastcgi
+
+Kasujemy zawartość katalogu /var/www/html a następnie kopiujemy do niego pliki z katalogu /usr/src/spdxl/www 
+
+cp /usr/src/spdxl/www/* /var/www/html
+
+modyfikujemy SET.php ustawiając tam swoją lokalizację
+
+CRONE:
+
+crontab -e
+
+i dopisujemy do niego to co jest w pliku cron.txt nie zapominajac o tym aby po ostatniej linii wcisnac enter.
+Oczywicie poprawiamy wszystkie sciezki, jesli nie instalujecie jako root.
+Co to robi?
+- sprawdza czy sondemod nie placze o nieaktualny rinex, jak tak, to go pobiera
+- kasuje pliki *.cal z /tmp
+- sprawdza czy rtl_tcp jest odpalone, jak nie, odpala skrypt START (taki swoisty autostart z sprawdzaniem czy cos nie zawislo)
 
 
 AKTUALIZACJA:

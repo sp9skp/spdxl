@@ -1,2 +1,3 @@
 * * * * * /root/SDR/CHECK_TOOLD
+* * * * * /root/SDR/SDR_CHECK
 0 4 * * * rm /tmp/*.cal
