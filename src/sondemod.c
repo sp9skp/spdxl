@@ -665,9 +665,11 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     dBs[i].aux=aux;
     dBs[i].press=press;
 
-    if(alt<3000 || difftime>14 || newS){
-	saveMysql( name, frameno, dBs[i].lat, dBs[i].lon, alt, speed, dir, climb, typ, bk, swv, ozon, aux, press, frq);
-	dBs[i].sendtime=time(NULL);
+    if(disSKP==0){
+	if(alt<3000 || difftime>14 || newS){
+	    saveMysql( name, frameno, dBs[i].lat, dBs[i].lon, alt, speed, dir, climb, typ, bk, swv, ozon, aux, press, frq);
+	    dBs[i].sendtime=time(NULL);
+	}
     }
     if(save2csv) save_csv();
 }
