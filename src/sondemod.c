@@ -855,7 +855,7 @@ static void Parms(void)
          else if (h[1U]=='e') {
             save2csv=1;
          }
-         else if (h[1U]=='S') {
+         else if (h[1U]=='D') {
             disSKP=1;
          }
 
