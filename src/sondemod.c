@@ -3431,7 +3431,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
    uint32_t j;
    uint32_t i;
    uint16_t crc;
-   char typ;
+   int typ;
    pCONTEXTPS pc0;
    pCONTEXTPS pc1;
    pCONTEXTPS pc;
@@ -3535,7 +3535,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
         }
         osi_WrStr(" ", 2ul);
         osi_WrStr(" name=",7UL);
-        osi_WrStr(pc->name,8UL);  
+        osi_WrStr(nam,8UL);  
 	
     }
       
@@ -3552,7 +3552,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
            osic_free((char * *) &pc, sizeof(struct CONTEXTPS));
         }
         else {
-           if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
+           if (aprsstr_StrCmp(nam, 8ul, pc->name, 8ul)) break;
                pc0 = pc;
         }
         pc = pc1;
@@ -3563,7 +3563,8 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
         memset((char *)pc,(char)0,sizeof(struct CONTEXTPS));
         pc->next = pcontextps;
         pcontextps = pc;
-        aprsstr_Assign(pc->name, 9ul, nam, 9ul);
+	pc->tused=systime;
+        aprsstr_Assign(pc->name, 8ul, nam, 8ul);
         if (sondeaprs_verb) osi_WrStrLn(" is new ", 9ul);
     }
     
