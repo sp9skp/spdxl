@@ -1,0 +1,4 @@
+npm install leaflet    #obsluga map
+npm install leaflet-providers  #dodatkowe mapy
+npm install moment  #timestamp unix na date
+npm install leaflet.coordinates #display coords mouse point

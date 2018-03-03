@@ -143,15 +143,6 @@ static int wtfno;
 
 time_t oldMTime;
 
-static void Error(char text[], uint32_t text_len)
-{
-   X2C_PCOPY((void **)&text,text_len);
-   osi_WrStr(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
-   X2C_ABORT();
-   X2C_PFREE(text);
-} /* end Error() */
-
 
 static void card(const char s[], uint32_t s_len, uint32_t * p,
                 uint32_t * n, char * ok0)
@@ -271,13 +262,13 @@ static void Parms(void)
             osi_NextArg(s, 1001ul);
             n = 0UL;
             fix(s, 1001ul, &n, &offset, &ok0);
-            if (!ok0) Error(" -o <MHz>", 10ul);
+            if (!ok0) printf(" -o <MHz>\n");
          }
          else if (s[1U]=='d') {
             /* sampelrate to output divide */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &downsamp) || downsamp<1UL) {
-               Error(" -p <ratio>", 12ul);
+               printf(" -p <ratio>\n");
             }
             --downsamp;
          }
@@ -286,14 +277,14 @@ static void Parms(void)
             osi_NextArg(s, 1001ul);
             if ((!aprsstr_StrToCard(s, 1001ul,
                 &mixto) || mixto<1UL) || mixto>2UL) {
-               Error(" -m <1..2>", 11ul);
+               printf(" -m <1..2>\n");
             }
          }
          else if (s[1U]=='a') {
             /* maximal active rx */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &maxrx)) {
-               Error(" -a <number>", 13ul);
+               printf(" -a <number>\n");
             }
          }
          else if (s[1U]=='t') {
@@ -321,15 +312,14 @@ static void Parms(void)
             /* sampelrate */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &samphz) || samphz>192000UL) {
-               Error(" -r <Hz>", 9ul);
+               printf(" -r <Hz>\n");
             }
          }
          else if (s[1U]=='i') {
             /* iq sampelrate */
             osi_NextArg(s, 1001ul);
-            if (!aprsstr_StrToCard(s, 1001ul,
-                &iqrate) || iqrate!=1024000UL && (iqrate<2048000UL || iqrate>2500000UL)
-                ) Error(" -i <Hz> 2048000 or 1024000", 28ul);
+            if (!aprsstr_StrToCard(s, 1001ul,&iqrate) || iqrate!=1024000UL && (iqrate<2048000UL || iqrate>2500000UL)
+                ) printf(" -i <Hz> 2048000 or 1024000\n");
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
@@ -337,14 +327,14 @@ static void Parms(void)
             /* maximum wake time */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &maxwake)) {
-               Error(" -w <ms>", 9ul);
+               printf(" -w <ms>\n");
             }
          }
          else if (s[1U]=='z') {
             /* powersave time */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &powersave)) {
-               Error(" -z <ms>", 9ul);
+               printf(" -z <ms>\n");
             }
             nosquelch = 0;
          }
@@ -352,7 +342,7 @@ static void Parms(void)
             /* powersave time */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &powersave)) {
-               Error(" -Z <ms>", 9ul);
+               printf(" -Z <ms>\n");
             }
             nosquelch = 1;
          }
@@ -360,67 +350,60 @@ static void Parms(void)
             /* powersave time */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &wtfno)) {
-               Error(" -n <number>", 9ul);
+               printf(" -n <number>\n");
             }
             nosquelch = 0;
          }
          else {
             if (s[1U]=='h') {
-               osi_WrStrLn("", 1ul);
-               osi_WrStrLn("AM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpip) to audio channel(s) 8/16 bit PCM", 85ul);
-               osi_WrStrLn(" -a <number>         maximum active rx to limit cpu load, if number is reached,", 80ul);
-               osi_WrStrLn("                      no more inactive rx will listen to become active", 71ul);
-               osi_WrStrLn(" -c <configfilename> read channels config from file (sdrcfg.txt)", 65ul);
-               osi_WrStrLn(" -d <ratio>          downsample output (1)",
-                43ul);
-               osi_WrStrLn(" -h                  help", 26ul);
-               osi_WrStrLn(" -i <kHz>            input sampelrate kHz 1024000 or 2048000..2500000 (2048000)", 80ul);
-               osi_WrStrLn("                      if >2048000, AM/FM-IF-width will increase proportional", 77ul);
-               osi_WrStrLn(" -k                  keep connection", 37ul);
-               osi_WrStrLn(" -m <audiochannels>  mix up/down all rx channels to 1 or 2 audiochannels (mono/stereo)", 87ul);
-               osi_WrStrLn("                      for 2 channels the rx audios will be arranged from left to right", 87ul);
-               osi_WrStrLn(" -o <mhz>            offset for entered frequencies if Converters are used", 75ul);
-               osi_WrStrLn(" -p <cmd> <value>    send rtl_tcp parameter, ppm, tunergain ...", 64ul);
-               osi_WrStrLn(" -r <Hz>             output sampelrate Hz for all channels 8000..192000 (16000)", 80ul);
-               osi_WrStrLn(" -s <soundfilename>  16bit signed n-channel sound stream/pipe", 62ul);
-               osi_WrStrLn(" -S <soundfilename>  8bit unsigned n-channel sound stream/pipe", 63ul);
-               osi_WrStrLn(" -t <url:port>       connect rtl_tcp server (127.0.0.1:1234)", 61ul);
-               osi_WrStrLn(" -v                  show rssi (dB) and afc (khz)", 50ul);
-               osi_WrStrLn(" -w <ms>             max stay awake (use CPU) time after squelch close (2000)", 78ul);
-               osi_WrStrLn(" -z <ms>             sleep time (no cpu) for inactive rx if squelch closed (-z 100)", 84ul);
-               osi_WrStrLn(" -Z <ms>             same but fast open with no audio quieting for sending", 75ul);
-               osi_WrStrLn("                      to decoders and not human ears", 53ul);
-	       osi_WrStrLn(" -n <number>         save waterfall to /tmp/wtf<number>.bin", 60ul);
-               osi_WrStrLn("example: -m 1 -d 2 -S /dev/dsp -t 127.0.0.1:1234 -p 5 72 -p 8 1 -v", 67ul);
-               osi_WrStrLn("", 1ul);
-               osi_WrStrLn("config file: (re-read every some seconds and may be modified any time)", 71ul);
-               osi_WrStrLn("  # comment", 12ul);
-               osi_WrStrLn("  p <cmd> <value>  rtl_tcp parameter like \'p 5 50\' ppm, \'p 8 1\' autogain on", 76ul);
-               osi_WrStrLn("  f <mhz> <AFC-range> <squelch%> <lowpass%>  <IF-width>  FM Demodulator", 72ul);
-               osi_WrStrLn("  a <mhz>  0          <squelch%> <lowpass%>  <IF-width>  AM Demodulator", 72ul);
-               osi_WrStrLn("  u <mhz> <IF-shift>   0         <agc speed> <IF-width>  USB Demodulator", 73ul);
-               osi_WrStrLn("  l same for LSB", 17ul);
-               osi_WrStrLn("    AFC-range in +-kHz, offset to AFC +- in Hz, Squelch 0 off, 100 open, 70 may do", 83ul);
-               osi_WrStrLn("    audio lowpass in % Nyquist frequ. of output sampelrate, 0 is off", 69ul);
-               osi_WrStrLn("    IF-width 3000 6000 12000 24000 48000 96000 192000Hz for low CPU usage", 74ul);
-               osi_WrStrLn("    (192000 only with >=2048khz iq-rate), (4th order IIR)", 58ul);
-               osi_WrStrLn("    (SSB 8th order IF-IIR), OTHER values with MORE CPU-load (12000 default)", 76ul);
-               osi_WrStrLn("", 1ul);
-               osi_WrStrLn("  example:", 11ul);
-               osi_WrStrLn("    p 5 50", 11ul);
-               osi_WrStrLn("    p 8 1", 10ul);
-               osi_WrStrLn("    f 438.825   5 -5000  75 70         (afc, offset to afc in Hz, squelch, audio lowpass, 12khz IF)", 100ul);
-               osi_WrStrLn("    f 439.275   0  0     0  80 20000   (20khz IF, uses more CPU)", 65ul);
-               osi_WrStrLn("    u 439.5001 -700 0  0  600     (USB with 600Hz CW-Filter at 800Hz", 69ul);
-               osi_WrStrLn("", 1ul);
-               osi_WrStrLn("  will generate 3 channel 16bit PCM stream (up to 64 channels with -z or -Z)", 77ul);
-               osi_WrStrLn("  use max. 95% of -i span. Rtl-stick will be tuned to center of the span", 73ul);
-               osi_WrStrLn("  rx in center of band will be +-10khz relocated to avoid ADC-DC offset pseudo", 79ul);
-               osi_WrStrLn("  carriers, SSB-only will be relocated 10..210khz to avoid inexact tuning steps", 80ul);
-               osi_WrStrLn("", 1ul);
-               osi_WrStrLn("    f 100.1 0 0 15 96000          (WFM with \"-r 192000 -d 4\" for 1 channnel 48khz", 82ul);
-               osi_WrStrLn("", 1ul);
-               X2C_ABORT();
+               printf("\n\nAM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpip) to audio channel(s) 8/16 bit PCM\n");
+               printf(" -a <number>         maximum active rx to limit cpu load, if number is reached,\n");
+               printf("                      no more inactive rx will listen to become active\n");
+               printf(" -c <configfilename> read channels config from file (sdrcfg.txt)\n");
+               printf(" -d <ratio>          downsample output (1)\n");
+               printf(" -h                  help\n");
+               printf(" -i <kHz>            input sampelrate kHz 1024000 or 2048000..2500000 (2048000)\n");
+               printf("                      if >2048000, AM/FM-IF-width will increase proportional\n");
+               printf(" -k                  keep connection\n");
+               printf(" -m <audiochannels>  mix up/down all rx channels to 1 or 2 audiochannels (mono/stereo)\n");
+               printf("                      for 2 channels the rx audios will be arranged from left to right\n");
+               printf(" -o <mhz>            offset for entered frequencies if Converters are used\n");
+               printf(" -p <cmd> <value>    send rtl_tcp parameter, ppm, tunergain ...\n");
+               printf(" -r <Hz>             output sampelrate Hz for all channels 8000..192000 (16000)\n");
+               printf(" -s <soundfilename>  16bit signed n-channel sound stream/pipe\n");
+               printf(" -S <soundfilename>  8bit unsigned n-channel sound stream/pipe\n");
+               printf(" -t <url:port>       connect rtl_tcp server (127.0.0.1:1234)\n");
+               printf(" -v                  show rssi (dB) and afc (khz)\n");
+               printf(" -w <ms>             max stay awake (use CPU) time after squelch close (2000)\n");
+               printf(" -z <ms>             sleep time (no cpu) for inactive rx if squelch closed (-z 100)\n");
+               printf(" -Z <ms>             same but fast open with no audio quieting for sending\n");
+               printf("                      to decoders and not human ears\n");
+	       printf(" -n <number>         save waterfall to /tmp/wtf<number>.bin\n");
+               printf("example: -m 1 -d 2 -S /dev/dsp -t 127.0.0.1:1234 -p 5 72 -p 8 1 -v\n\n");
+               printf("config file: (re-read every some seconds and may be modified any time)\n");
+               printf("  # comment\n");
+               printf("  p <cmd> <value>  rtl_tcp parameter like \'p 5 50\' ppm, \'p 8 1\' autogain on\n");
+               printf("  f <mhz> <AFC-range> <squelch%> <lowpass%>  <IF-width>  FM Demodulator\n");
+               printf("  a <mhz>  0          <squelch%> <lowpass%>  <IF-width>  AM Demodulator\n");
+               printf("  u <mhz> <IF-shift>   0         <agc speed> <IF-width>  USB Demodulator\n");
+               printf("  l same for LSB\n");
+               printf("    AFC-range in +-kHz, offset to AFC +- in Hz, Squelch 0 off, 100 open, 70 may do\n");
+               printf("    audio lowpass in % Nyquist frequ. of output sampelrate, 0 is off\n");
+               printf("    IF-width 3000 6000 12000 24000 48000 96000 192000Hz for low CPU usage\n");
+               printf("    (192000 only with >=2048khz iq-rate), (4th order IIR)\n");
+               printf("    (SSB 8th order IF-IIR), OTHER values with MORE CPU-load (12000 default)\n\n");
+               printf("  example:\n");
+               printf("    p 5 50\n");
+               printf("    p 8 1\n");
+               printf("    f 438.825   5 -5000  75 70         (afc, offset to afc in Hz, squelch, audio lowpass, 12khz IF)\n");
+               printf("    f 439.275   0  0     0  80 20000   (20khz IF, uses more CPU)\n");
+               printf("    u 439.5001 -700 0  0  600     (USB with 600Hz CW-Filter at 800Hz\n\n");
+               printf("  will generate 3 channel 16bit PCM stream (up to 64 channels with -z or -Z)\n");
+               printf("  use max. 95% of -i span. Rtl-stick will be tuned to center of the span\n");
+               printf("  rx in center of band will be +-10khz relocated to avoid ADC-DC offset pseudo\n");
+               printf("  carriers, SSB-only will be relocated 10..210khz to avoid inexact tuning steps\n\n");
+               printf("    f 100.1 0 0 15 96000          (WFM with \"-r 192000 -d 4\" for 1 channnel 48khz\n\n");
+               exit(0);
             }
             if (s[1U]=='p') {
                osi_NextArg(s, 1001ul);
@@ -431,16 +414,16 @@ static void Parms(void)
                      stickparm[m].ok0 = 1;
                      stickparm[m].changed = 1;
                   }
-                  else Error(" -p <cmd> <value>", 18ul);
+                  else printf(" -p <cmd> <value>");
                }
                else {
-                  Error(" -p <cmd> <value>", 18ul);
+                  printf(" -p <cmd> <value>\n");
                }
             }
-            else Error("-h", 3ul);
+            else printf("-h\n");
          }
       }
-      else Error("-h", 3ul);
+      else printf("-h\n");
    }
    powersave = (powersave*samphz)/32000UL;
    maxwake = (maxwake*samphz)/32000UL;
@@ -458,15 +441,16 @@ static void setparms(char all)
          sdr_setparm(i, stickparm[i].val);
          if (verb) {
             if (nl) {
-               osi_WerrLn("", 1ul);
+               printf("\n");
                nl = 0;
             }
-            osi_Werr("parm:", 6ul);
-            aprsstr_IntToStr((int32_t)i, 0UL, s, 31ul);
+            printf("parm:%i %i\n",i,stickparm[i].val);
+/*skp            aprsstr_IntToStr((int32_t)i, 0UL, s, 31ul);
             osi_Werr(s, 31ul);
             osi_Werr(" ", 2ul);
             aprsstr_IntToStr((int32_t)stickparm[i].val, 0UL, s, 31ul);
             osi_WerrLn(s, 31ul);
+*/
          }
       }
       stickparm[i].changed = 0;
@@ -499,7 +483,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
    midfreq = 0UL;
    i = 0UL;
    max0 = 0UL;
-   min0 = X2C_max_longcard;
+   min0 = 0xFFFFFFFF;
    while (i<freqc) {
       /*WrStr("rx"); WrInt(i+1, 0); WrInt(freq[i].khz, 0); WrStrLn("kHz"); */
       if (freq[i].hz>max0) max0 = freq[i].hz;
@@ -508,11 +492,11 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
    }
    if (max0>=min0) {
       if (max0-min0>=iqrate){
-	 osi_WerrLn("freq span > iq-sampelrate", 26ul);
-	exit(0);
+	 printf("freq span > iq-sampelrate\n");
+	//exit(0);
     }
       midfreq = (max0+min0)/2UL;
-      nomid = X2C_max_longint;
+      nomid = 0x7FFFFFFF;
       i = 0UL;
       ssb = 0;
       while (i<freqc) {
@@ -535,11 +519,11 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          /*     FILL(ADR(rxx[i]), 0C, SIZE(rxx[0])); */
          prx[i] = &rxx[i];
          khz = 1.0;
-         if (iqrate>2048000UL) khz = X2C_DIVL(2.048E+6,(double)iqrate);
+         if (iqrate>2048000UL) khz = 2.048E+6/(double)iqrate;
          fhz = (double)((int32_t)freq[i].hz-(int32_t)midfreq)*khz;
-         rxx[i].df = (uint32_t)((int32_t)X2C_TRUNCI(fhz,X2C_min_longint,X2C_max_longint)/1000L);
-         rem = fhz-(double)(((int32_t)X2C_TRUNCI(fhz,X2C_min_longint,X2C_max_longint)/1000L)*1000L);
-         rxx[i].dffrac = (uint32_t)X2C_TRUNCC(X2C_DIVL(rem,khz)+0.5,0UL, X2C_max_longcard);
+         rxx[i].df = ((int32_t)X2C_TRUNCI(fhz,(-0x7FFFFFFFL-1),0x7FFFFFFF)/1000L);
+         rem = fhz-(double)(((int32_t)X2C_TRUNCI(fhz,(-0x7FFFFFFFL-1),0x7FFFFFFF)/1000L)*1000L);
+         rxx[i].dffrac = (uint32_t)X2C_TRUNCC(rem/khz+0.5,0UL, 0xFFFFFFFF);
          /*      rxx[i].df:=(freq[i].hz DIV 1000 - midfreq DIV 1000); */
          /*      rxx[i].dffrac:=(freq[i].hz-rxx[i].df*1000) MOD 1000; */
          /*WrInt(nomid, 15);WrInt(midfreq, 15);WrInt(freq[i].hz, 15);
@@ -556,7 +540,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
       }
       prx[i] = 0;
    }
-   if (midfreq<20000000UL) osi_WerrLn("no valid frequency", 19ul);
+   if (midfreq<20000000UL) printf("no valid frequency\n");
    else if (midfreq!=lastmidfreq) {
       setstickparm(1UL, midfreq);
       /*WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz"); */
@@ -576,12 +560,24 @@ static void updateChanT(){
     
    int i;
    char tmp[15],tmp1[25];
+   double fhz;
+
+   double khz;
+
+   khz = 1.0;
+   if (iqrate>2048000) khz = (double)iqrate/(double)2048000;
+
+     double tt;
+
+        tt=0.0;
+        if(rxx[i].df>0) tt=1.0;
+
 
    sndbufft[0]=0;
    strcat(sndbufft,"9 S K P ");
 
    while (prx[i]) {
-      sprintf(tmp,"%02i%06li",i+1,midfreq/1000+rxx[i].df);
+      sprintf(tmp,"%02i%06li",i+1,(long int)((midfreq/1000+(int32_t)rxx[i].df*khz+tt)));
       tmp1[0]=tmp[0];
       tmp1[1]='0';
       tmp1[2]=tmp[1];
@@ -602,15 +598,15 @@ static void updateChanT(){
       tmp1[17]='0';
       tmp1[18]=0;
 
-//      printf(sndbufft);printf("\n");
       strcat(sndbufft,tmp1);
       ++i;
    }
-
-   osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
-   osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
-   osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
-   osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
+   if(fd){
+        osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
+	osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
+	osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
+	osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
+   }
 
 }
 
@@ -671,12 +667,12 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &n, &ok0);
                if (n>255UL || !ok0) {
-                  osi_WerrLn("wrong parameter number", 23ul);
+                  printf("wrong parameter number\n");
                }
                else {
                   skip(li, 256ul, &i);
                   int0(li, 256ul, &i, &m, &ok0);
-                  if (!ok0) osi_WerrLn("wrong value", 12ul);
+                  if (!ok0) printf("wrong value\n");
                   else setstickparm(n, (uint32_t)m);
                }
                i = 0UL;
@@ -690,7 +686,7 @@ static void rdconfig(void)
                ++i;
                skip(li, 256ul, &i);
                fix(li, 256ul, &i, &x, &ok0);
-               if (!ok0) osi_WerrLn("wrong MHz", 10ul);
+               if (!ok0) printf("wrong MHz\n");
                skip(li, 256ul, &i);
                int0(li, 256ul, &i, &m, &ok0);
                if (!ok0) m = 0L;
@@ -727,16 +723,16 @@ static void rdconfig(void)
                if (wid>1000000UL) wid = 1000000UL;
 
 
-               if (freqc>63UL) osi_WerrLn("freq table full", 16ul);
+               if (freqc>63UL) printf("freq table full\n");
                else {
                   x = x+offset;
                   if (x<=0.0 || x>=2.147483E+6) {
-                     osi_WerrLn("freq out of range", 18ul);
+                     printf("freq out of range\n");
                      x = 0.0;
                   }
                   x = x*1.E+6+(double)ssbsh;
 
-                  freq[freqc].hz = (uint32_t)X2C_TRUNCC(x+0.5,0UL, X2C_max_longcard);
+                  freq[freqc].hz = (uint32_t)X2C_TRUNCC(x+0.5,0UL, 0xFFFFFFFF);
                   freq[freqc].afc = m;
 		  freq[freqc].shiftf = n;
                   freq[freqc].width = wid;
@@ -754,7 +750,7 @@ static void rdconfig(void)
                i = 0UL;
             }
             else if (mo=='#' || (uint8_t)mo<=' ') i = 0UL;
-            else osi_WerrLn("unkown command", 15ul);
+            else printf("unkown command\n");
             ++lino;
          }
          ++p;
@@ -762,7 +758,7 @@ static void rdconfig(void)
       osic_Close(fd0);
       
    }
-   else Error("config file not readable", 25ul);
+   else printf("config file not readable\n");
    centerfreq(freq, 64ul);
    
 } /* end rdconfig() */
@@ -775,20 +771,20 @@ static void showrssi(void)
    int lvl;
    float lvlf;
    char s[31],tmp[10];
-   char fname[30],line[100];
+   char fname[30],line[120];
    FILE* stream;
 
+   double khz;
+
+   khz = 1.0;
+   if (iqrate>2048000) khz = (double)iqrate/(double)2048000;
 
    i = 0UL;
-   osi_Werr("\e[1;1H\e[2J",10ul);
+   printf("\e[1;1H\e[2J");
 
-   sprintf(tmp,"Param[1]: %i\n",stickparm[1].val);
-   osi_Werr(tmp,strlen(tmp)+1);
-   sprintf(tmp,"Param[5]: %i\n",stickparm[5].val);
-   osi_Werr(tmp,strlen(tmp)+1);
-   sprintf(tmp,"Param[8]: %i\n\n",stickparm[8].val);
-   osi_Werr(tmp,strlen(tmp)+1);
-
+   printf("Param[1]: %i\n",stickparm[1].val);
+   printf("Param[5]: %i\n",stickparm[5].val);
+   printf("Param[8]: %i\n\n",stickparm[8].val);
 
    if(wtfno>0){
         sprintf(fname,"/tmp/sdr%d.bin",wtfno);
@@ -809,14 +805,16 @@ static void showrssi(void)
 
    while (prx[i]) {
       j = prx[i]->idx;
-      sprintf(tmp,"%02i | %li | ",j+1,midfreq/1000+rxx[j].df);
-      osi_Werr(tmp,strlen(tmp)+1);
-      lvlf=osic_ln((rxx[j].rssit[0]+1.0f)*3.0517578125E-5f)*4.342944819f;
-      aprsstr_FixToStr(lvlf, 2UL, s, 31ul);
+     double tt;
+     
 
-      osi_Werr(s, 31ul);
-      if (squelchs[j].sqsave<=0L) osi_Werr("db", 3ul);
-      else osi_Werr("dB", 3ul);
+	tt=0.0;
+	if(rxx[j].df>0) tt=1.0;
+
+      lvlf=osic_ln((rxx[j].rssit[0]+1.0f)*3.0517578125E-5f)*4.342944819f;
+      printf("%02i | %li | %2.1f",j+1,(long int)((midfreq/1000+(int32_t)rxx[j].df*khz+tt)),lvlf);
+      if (squelchs[j].sqsave<=0L) printf("db");
+      else printf("dB");
 
 
       if(wtfno>0){
@@ -826,7 +824,7 @@ static void showrssi(void)
         }
         rxx[j].rssitf[0]=lvlf;
 
-        sprintf(line,"%02i;%li;%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\r\n",j+1,midfreq/1000+rxx[j].df,
+        sprintf(line,"%02i;%li;%05i;%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\r\n",j+1,(long int)((midfreq/1000+(int32_t)rxx[j].df*khz+tt)),rxx[j].afckhz,
 			(unsigned char)rxx[j].rssitf[0],
 			(unsigned char)rxx[j].rssitf[1],
 			(unsigned char)rxx[j].rssitf[2],
@@ -850,14 +848,14 @@ static void showrssi(void)
       if(lvl>22) lvl=22;
       if(lvl<0) lvl=0;
 
-      sprintf(tmp," \e[48;5;%im \e[48;5;0m",wfall[lvl]);
-    	  osi_Werr(tmp,strlen(tmp));
+      printf(" \e[48;5;%im \e[48;5;0m",wfall[lvl]);
+    	 // osi_Werr(tmp,strlen(tmp));
     
       for(k=1;k<16;k++){
 	  if(rxx[j].rssit[k]>22) rxx[j].rssit[k]=22;
 	  if(rxx[j].rssit[k]<0) rxx[j].rssit[k]=0;
-          sprintf(tmp,"\e[48;5;%im \e[48;5;0m",wfall[(int)rxx[j].rssit[k]]);
-    	  osi_Werr(tmp,strlen(tmp));
+          printf("\e[48;5;%im \e[48;5;0m",wfall[(int)rxx[j].rssit[k]]);
+    	  //osi_Werr(tmp,strlen(tmp));
       }
       for(k=15;k>0;k--){
 	rxx[j].rssit[k]=rxx[j].rssit[k-1];
@@ -871,16 +869,16 @@ static void showrssi(void)
       END;
       */
       if (rxx[j].modulation=='f') {
-	 osi_Werr(" | ", 4ul);
-         aprsstr_IntToStr(rxx[j].afckhz, 0UL, s, 31ul);
-         osi_Werr(s, 31ul);
-         osi_Werr(" \n", 2ul);
+	 printf(" | %i\n",rxx[j].afckhz);
+//         aprsstr_IntToStr(rxx[j].afckhz, 0UL, s, 31ul);
+//         osi_Werr(s, 31ul);
+//         osi_Werr(" \n", 2ul);
       }
       /*Werr(" "); IntToStr(squelchs[j].wakeness, 0, s); Werr(s); Werr(" ");
                 */
       ++i;
    }
-   osi_Werr("    \015", 6ul);
+   printf("    \015");
    osic_flush();
    if(wtfno>0) fclose(stream);
 } /* end showrssi() */
@@ -1042,9 +1040,9 @@ extern int main(int argc, char **argv)
             if (sn<0L) {
                if (verb) {
                   if (sn==-2L) {
-                     osi_WerrLn("impossible sampelrate conversion", 33ul);
+                     printf("impossible sampelrate conversion\n");
                   }
-                  else osi_WerrLn("connection lost", 16ul);
+                  else printf("connection lost\n");
                }
                recon = 1;
                if (!reconn) break;
@@ -1115,7 +1113,7 @@ extern int main(int argc, char **argv)
                            anonym0->u1 = anonym0->u1+(((float)(anonym0->pcmc*2L)-anonym0->u1)-anonym0->il)*anonym0->lp;
                            anonym0->u2 = anonym0->u2+(anonym0->il-anonym0->u2)*anonym0->lp;
                            anonym0->il = anonym0->il+(anonym0->u1-anonym0->u2)*anonym0->lp*2.0f;
-                           anonym0->pcmc = (int32_t)X2C_TRUNCI(anonym0->u2, X2C_min_longint,X2C_max_longint);
+                           anonym0->pcmc = (int32_t)X2C_TRUNCI(anonym0->u2,(-0x7FFFFFFFL-1),0x7FFFFFFF);
                         }
                      }
                      /* lowpass */
@@ -1173,11 +1171,11 @@ extern int main(int argc, char **argv)
       }
       else {
          osi_Werr(soundfn, 1001ul);
-         osi_WerrLn(" sound file open error", 23ul);
+         printf(" sound file open error\n");
       }
-      if (verb) osi_WerrLn("connection lost", 16ul);
+      if (verb) printf("connection lost\n");
    }
-   else osi_WerrLn("not connected", 14ul);
+   else printf("not connected\n");
    X2C_EXIT();
    return 0;
 }

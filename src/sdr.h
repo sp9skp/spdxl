@@ -54,7 +54,7 @@ struct sdr_RX;
 
 struct sdr_RX {
    int32_t shiftf;
-   uint32_t df;
+   int32_t df;
    uint32_t dffrac;
    uint32_t width;
    uint32_t agc;

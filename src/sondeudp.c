@@ -194,6 +194,9 @@ struct R41 {
 };
 
 //Added ------------------------------ by SQ2DK
+
+unsigned int pok=1,nok=1,cnt=1;
+
 struct PILS;
 
 struct PILS {
@@ -495,8 +498,7 @@ static void initdfir(DFIRTAB dfirtab, uint32_t fg)
 } /* end initdfir() */
 
 
-static void initafir(AFIRTAB atab, uint32_t F0, uint32_t F1,
-                float eq)
+static void initafir(AFIRTAB atab, uint32_t F0, uint32_t F1, float eq)
 {
    uint32_t f;
    uint32_t i;
@@ -513,19 +515,16 @@ static void initafir(AFIRTAB atab, uint32_t F0, uint32_t F1,
    tmp = (uint32_t)X2C_TRUNCC(f10,0UL,X2C_max_longcard)+1UL;
    f = (uint32_t)X2C_TRUNCC(f00,0UL,X2C_max_longcard);
    if (f<=tmp) for (;; f++) {
-      e = 1.0f+eq*((X2C_DIVR((float)f,X2C_DIVR((float)((F0+F1)*32UL),
-                (float)adcrate)))*2.0f-1.0f);
+      e = 1.0f+eq*((X2C_DIVR((float)f,X2C_DIVR((float)((F0+F1)*32UL), (float)adcrate)))*2.0f-1.0f);
       /*
           e:=1.0 + eq*(FLOAT(f)/FLOAT((F0+F1)*AFIRLEN DIV adcrate)*2.0-1.0);
       */
       if (e<0.0f) e = 0.0f;
       if (f==(uint32_t)X2C_TRUNCC(f00,0UL,X2C_max_longcard)) {
-         e = e*(1.0f-(f00-(float)(uint32_t)X2C_TRUNCC(f00,0UL,
-                X2C_max_longcard)));
+         e = e*(1.0f-(f00-(float)(uint32_t)X2C_TRUNCC(f00,0UL,X2C_max_longcard)));
       }
       if (f==(uint32_t)X2C_TRUNCC(f10,0UL,X2C_max_longcard)+1UL) {
-         e = e*(f10-(float)(uint32_t)X2C_TRUNCC(f10,0UL,
-                X2C_max_longcard));
+         e = e*(f10-(float)(uint32_t)X2C_TRUNCC(f10,0UL, X2C_max_longcard));
       }
       /*
       IF eq<>0 THEN IO.WrFixed(e,2,2);IO.WrLn; END;
@@ -763,8 +762,8 @@ static void Config(void)
       { // with
          struct PILS * anonym5 = &chan[c].pils;
          anonym5->configbaud = 4800UL;
-         anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate;
-         initafir(anonym5->afirtab, 0UL, 2200UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
+         anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate; //4800
+         initafir(anonym5->afirtab, 0UL, 9200UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
          anonym5->baudfine = 0L;
          anonym5->noise = 0.0f;
          anonym5->bitlev = 0.0f;
@@ -1808,8 +1807,7 @@ static void demodbit10(uint32_t m, float u, float u0)
          /*quality*/
          ua = (float)fabs(u)-anonym->bitlev;
          anonym->bitlev = anonym->bitlev+ua*0.02f;
-         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)
-                *0.05f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.05f;
       }
       /*quality*/
       anonym->lastmanch = d;
@@ -1845,27 +1843,6 @@ static void demod10(float u, uint32_t m)
    }
 } /* end demod10() */
 
-static void Fsk10(uint32_t m)
-{
-   float ff;
-   int32_t lim;
-   struct M10 * anonym;
-   { /* with */
-      struct M10 * anonym = &chan[m].m10;
-      lim = (int32_t)anonym->demodbaud;
-      for (;;) {
-         if (anonym->baudfine>=65536L) {
-            anonym->baudfine -= 65536L;
-            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L),
-                16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
-            demod10(ff, m);
-         }
-         anonym->baudfine += lim;
-         lim = 0L;
-         if (anonym->baudfine<131072L) break;
-      }
-   }
-} /* end Fsk10() */
 
 /*---------------------- M10 */
 
@@ -2034,7 +2011,7 @@ static void demodbytepilot(uint32_t m, char d)
 		lat=(double)getint32r(anonym->rxbuf,55UL,offs)*0.000001;
 		long0=(double)getint32r(anonym->rxbuf,55UL,offs+4UL)*0.000001;
                 heig=(double)getint32r(anonym->rxbuf,55UL,offs+8UL)*.01; 
-                
+                cnt++;
 		if (crc == crc16rev(anonym->rxbuf, 48UL)) {
                     for (cz_1 = 49UL; cz_1>1UL; cz_1--) {anonym->rxbuf[cz_1+5UL] = anonym->rxbuf[cz_1];}   //move cells by 5 up
 		
@@ -2043,11 +2020,12 @@ static void demodbytepilot(uint32_t m, char d)
 		    pils_pokalt=heig;
   		    //if (verb) osi_WrStr(" CRC [OK+] ",12UL);
             	    if  (verb) {             //if more verbous print lat/long/h
+			pok++;
 			osi_WrStrLn("",0UL);
 			osi_WrStr(" Lat=",5ul);
-			osic_WrFixed((float)(lat), 5L, 1UL);
+			osic_WrFixed((float)(lat), 6L, 1UL);
 			osi_WrStr(" Long=", 6ul);
-			osic_WrFixed((float)(long0), 5L, 1UL);
+			osic_WrFixed((float)(long0), 6L, 1UL);
 			osi_WrStr(" height=", 9ul);
 			osic_WrFixed((float)heig, 1L, 1UL);
 			osi_WrStrLn("m ", 3ul);
@@ -2058,12 +2036,13 @@ static void demodbytepilot(uint32_t m, char d)
 		else {
 	    	    if (verb) osi_WrStrLn(" parity error",14UL);
 		    //if position not too far from last good one....
-		    if ((fabs(pils_poklat-lat)<0.1f) && (fabs(pils_poklon-long0)<0.1f) && (abs(pils_pokalt-heig)<500)) {
+		    if ((fabs(pils_poklat-lat)<0.01f) && (fabs(pils_poklon-long0)<0.01f) && (abs(pils_pokalt-heig)<500)) {
 			if (verb) {
+			    nok++;
 		    	    osi_WrStr(" !Lat=",6ul);
-		    	    osic_WrFixed((float)(lat), 5L, 1UL);
+		    	    osic_WrFixed((float)(lat), 6L, 1UL);
 		    	    osi_WrStr(" !Long=", 7ul);
-		    	    osic_WrFixed((float)(long0), 5L, 1UL);
+		    	    osic_WrFixed((float)(long0), 6L, 1UL);
 		    	    osi_WrStr(" !height=", 10ul);
 		    	    osic_WrFixed((float)heig, 1L, 1UL);
 		    	    osi_WrStrLn("m ", 3ul);
@@ -2077,6 +2056,7 @@ static void demodbytepilot(uint32_t m, char d)
 			sendpils(m); //send data to sondemod
 		   }
 		}
+		printf("OK: %u, NOK:%u, CNT:%u  CAL:%u\r\n",pok,nok,cnt,(unsigned int)(100*pok/nok));
             }
 	    
             if (anonym->rxp==48UL) {              
@@ -2729,6 +2709,26 @@ static void FskPS(uint32_t m)
    }
 } /* end Fsk() */
 
+static void Fsk10(uint32_t m)
+{
+   float ff;
+   int32_t lim;
+   struct M10 * anonym;
+   { /* with */
+      struct M10 * anonym = &chan[m].m10;
+      lim = (int32_t)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demod10(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+} /* end Fsk10() */
 
 
 /*------------------------------ DFM06 */
@@ -4017,7 +4017,7 @@ static void getadc(void)
 	 sprintf(tmps,"%c%c%c%c\n",adcbuf[0],adcbuf[1],adcbuf[2],adcbuf[3]);
 	 
 	 if(tmps[0]=='9' && tmps[1]=='S' && tmps[2]=='K' && tmps[3]=='P'){ //freq table
-	    printf("Update channel table\n");
+//	    printf("Update channel table\n");
 	    pos=4;
 	    mod=1;
             chno=0;
@@ -4069,13 +4069,14 @@ static void getadc(void)
         	ch = (adcbufrd-adcbufsampx)-1UL;
         	/*WrInt(ch, 1); WrStrLn(" ch"); */
         	if (ch<63UL) {
-            	    if (verb && maxchannels!=ch && mod==0) {
+/*            	    if (verb && maxchannels!=ch && mod==0) {
                 	osi_WrStr("channels changed from ", 23ul);
                 	osic_WrINT32(maxchannels+1UL, 0UL);
                 	osi_WrStr(" to ", 5ul);
                 	osic_WrINT32(ch+1UL, 0UL);
                 	osi_WrStrLn("", 1ul);
                     }
+*/
             	    maxchannels = ch;
         	}
             }

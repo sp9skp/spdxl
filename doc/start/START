@@ -57,7 +57,7 @@ screen -S rd -p sondeudp2 -X stuff $'/root/SDR/bin/sondeudp -8 -1 -f 16000 -l 12
 sleep 5
 
 screen -S rd -X screen -t sondemod
-screen -S rd -p sondemod -X stuff $'while [ 1 ] ; do /root/SDR/bin/sondemod -v -x /tmp/rinex -T 1440 -r 127.0.0.1:4010 -o 4000 -I N0CALL-14 -R 30 -d -A 3000 -B 2 -b 45 -p 0 -K DB_PASS -e 10 ; done\n'
+screen -S rd -p sondemod -X stuff $'while [ 1 ] ; do /root/SDR/bin/sondemod -v -x /tmp/rinex -T 1440 -r 127.0.0.1:4010 -o 4000 -I N0CALL-14 -R 30 -d -A 3000 -B 2 -b 45 -p 0 -K DB_PASS -e ; done\n'
 
 #screen -S rd -X screen -t almanach
 #screen -S rd -p almanach -X stuff $'while [ 1 ] ; do sleep 1800; /root/SDR/RINEX ; done \n'
