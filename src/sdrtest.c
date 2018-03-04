@@ -569,8 +569,8 @@ static void updateChanT(){
 
      double tt;
 
-        tt=0.0;
-        if(rxx[i].df>0) tt=1.0;
+        tt=-1.0;
+        if(rxx[i].df>0) tt=0.5;
 
 
    sndbufft[0]=0;
@@ -809,7 +809,7 @@ static void showrssi(void)
      
 
 	tt=0.0;
-	if(rxx[j].df>0) tt=1.0;
+	if(rxx[j].df>0) tt=0.5;
 
       lvlf=osic_ln((rxx[j].rssit[0]+1.0f)*3.0517578125E-5f)*4.342944819f;
       printf("%02i | %li | %2.1f",j+1,(long int)((midfreq/1000+(int32_t)rxx[j].df*khz+tt)),lvlf);
