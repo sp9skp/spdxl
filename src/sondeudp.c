@@ -2211,8 +2211,8 @@ static void demodbytepilot(uint32_t m, char d)
 			osic_WrFixed((float)(long0), 6L, 1UL);
 			osi_WrStr(" height=", 9ul);
 			osic_WrFixed((float)heig, 1L, 1UL);
-			osi_WrStr("m ", 3ul);
-			printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
+			osi_WrStrLn("m ", 3ul);
+			//printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
 		    }
 
 		    sendpils(m);    //send data to udp port - our job here is done.
@@ -2563,8 +2563,8 @@ static void decode41(uint32_t m)
             osi_WrStr("R", 2ul);
          }
          Wrtune(chan[m].adcdc, chan[m].adcmax);
-         osi_WrStr("", 1ul);
-	 printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
+         osi_WrStrLn("", 1ul);
+	// printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
       }
    }
    if (nameok>0UL) sendrs41(m);
