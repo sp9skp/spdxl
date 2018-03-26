@@ -610,6 +610,7 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 
 int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq){
 
+//    printf("***** %s\n",name);
     int i,newS=1;
     time_t minTime=time(NULL),difftime;
     int oldestPos=0,soNum=-1;
@@ -2507,22 +2508,22 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     tmp[0]=rxb[64];    tmp[1]=rxb[65];    tmp[2]=rxb[66];    tmp[3]=rxb[67];    tmp[4]=rxb[68];   tmp[5]=0;
     T1= atoi(tmp)/100.0-273.0;
 
-    tmp[0]=rxb[74];    tmp[1]=rxb[75];    tmp[2]=rxb[76];    tmp[3]=rxb[77];    tmp[4]=0;
+    tmp[0]=rxb[69];    tmp[1]=rxb[70];    tmp[2]=rxb[71];    tmp[3]=rxb[72];    tmp[4]=0;
     yr= atoi(tmp);
 
-    tmp[0]=rxb[78];    tmp[1]=rxb[79];    tmp[2]=0;
+    tmp[0]=rxb[73];    tmp[1]=rxb[74];    tmp[2]=0;
     mon= atoi(tmp);
 
-    tmp[0]=rxb[80];    tmp[1]=rxb[81];    tmp[2]=0;
+    tmp[0]=rxb[75];    tmp[1]=rxb[76];    tmp[2]=0;
     day= atoi(tmp);
 
-    tmp[0]=rxb[82];    tmp[1]=rxb[83];    tmp[2]=0;
+    tmp[0]=rxb[77];    tmp[1]=rxb[78];    tmp[2]=0;
     hr= atoi(tmp);
 
-    tmp[0]=rxb[84];    tmp[1]=rxb[85];    tmp[2]=0;
+    tmp[0]=rxb[79];    tmp[1]=rxb[80];    tmp[2]=0;
     min= atoi(tmp);
 
-    tmp[0]=rxb[86];    tmp[1]=rxb[87];    tmp[2]=0;
+    tmp[0]=rxb[81];    tmp[1]=rxb[82];    tmp[2]=0;
     sec= atoi(tmp);
 
 

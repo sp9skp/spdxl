@@ -763,7 +763,7 @@ static void Config(void)
          struct PILS * anonym5 = &chan[c].pils;
          anonym5->configbaud = 4800UL;
          anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate; //4800
-         initafir(anonym5->afirtab, 0UL, 9200UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
+         initafir(anonym5->afirtab, 0UL, 9600UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
          anonym5->baudfine = 0L;
          anonym5->noise = 0.0f;
          anonym5->bitlev = 0.0f;
@@ -1853,6 +1853,189 @@ static void demod10(float u, uint32_t m)
 //PILOTSONDE
 //-----------------------------------------------------------------------------------------------------
 
+#define EOF_INT  0x1000000
+int sample_rate = 0, bits_sample = 0;
+unsigned long sample_count = 0;
+double bitgrenze = 0;
+int wlen;
+int *sample_buff = NULL;
+int par=1, par_alt=1;
+
+int read_signed_sample(FILE *fp) {  // int = i32_t
+    int byte, i, sample, s=0;       // EOF -> 0x1000000
+
+        byte = fgetc(fp);
+        if (byte == EOF) return EOF_INT;
+        if (i == 0) sample = byte;
+
+        if (bits_sample == 16) {
+            byte = fgetc(fp);
+            if (byte == EOF) return EOF_INT;
+            if (i == 0) sample +=  byte << 8;
+        }
+
+
+    if (bits_sample ==  8)  s = sample-128;   // 8bit: 00..FF, centerpoint 0x80=128
+    if (bits_sample == 16)  s = (short)sample;
+
+    sample_count++;
+
+    return s;
+}
+
+int read_filter_sample(FILE *fp) {
+    int i;                          // wenn sample_buff[] ein 8N1-byte umfasst,
+    int s0, s, y;                   // mit (max+min)/2 Mittelwert bestimmen;
+    static int min, max;            // Glaettung durch lowpass/moving average empfohlen
+
+    s = read_signed_sample(fp);
+    if (s == EOF_INT) return EOF_INT;
+
+    sample_count--;
+
+    s0 = sample_buff[sample_count % wlen];
+    sample_buff[sample_count % wlen] = s;
+
+    y = 0;
+    if (sample_count >  wlen-1) {
+
+        if (s < min)  min = s;
+        else {
+            if (s0 <= min) {
+                min = sample_buff[0];
+                for (i = 1; i < wlen; i++) {
+                    if (sample_buff[i] < min)  min = sample_buff[i];
+                }
+            }
+        }
+
+        if (s > max)  max = s;
+        else {
+            if (s0 >= max) {
+                max = sample_buff[0];
+                for (i = 1; i < wlen; i++) {
+                    if (sample_buff[i] > max)  max = sample_buff[i];
+                }
+            }
+        }
+
+        y = sample_buff[(sample_count+wlen-1)%wlen] - (min+max)/2;
+
+    }
+    else if (sample_count == wlen-1) {
+        min = sample_buff[0];
+        max = sample_buff[0];
+        for (i = 1; i < wlen; i++) {
+            if (sample_buff[i] < min)  min = sample_buff[i];
+            if (sample_buff[i] > max)  max = sample_buff[i];
+        }
+        y = sample_buff[(sample_count+wlen-1)%wlen] - (min+max)/2;
+    }
+
+    sample_count++;
+
+    return y;
+}
+
+int read_bits_fsk(FILE *fp, int *bit, int *len,float samples_per_bit,int option_dc,int option_res,int option_inv) {
+    static int sample;
+    int n, y0;
+    float l, x1;
+    static float x0;
+
+    n = 0;
+    do{
+        y0 = sample;
+
+        if (option_dc) sample = read_filter_sample(fp);
+        else           sample = read_signed_sample(fp);
+
+        if (sample == EOF_INT) return EOF;
+        //sample_count++;
+        par_alt = par;
+        par =  (sample >= 0) ? 1 : -1;    // 8bit: 0..127,128..255 (-128..-1,0..127)
+        n++;
+    } while (par*par_alt > 0);
+
+    if (!option_res) l = (float)n / samples_per_bit;
+    else {                                 // genauere Bitlaengen-Messung
+        x1 = sample/(float)(sample-y0);    // hilft bei niedriger sample rate
+        l = (n+x0-x1) / samples_per_bit;   // meist mehr frames (nicht immer)
+        x0 = x1;
+    }
+
+    *len = (int)(l+0.5);
+
+    if (!option_inv) *bit = (1+par_alt)/2;  // oben 1, unten -1
+    else             *bit = (1-par_alt)/2;  // sdr#<rev1381?, invers: unten 1, oben -1
+// *bit = (1+inv*par_alt)/2; // ausser inv=0
+
+    /* Y-offset ? */
+
+    return 0;
+}
+
+/*
+static void decPIL(){
+
+    pos = FRAMESTART;
+
+    while (!read_bits_fsk(fp, &bit, &len)) {
+
+        if (len == 0) { // reset_frame();
+            if (pos > (pos_GPSdate+7)*BITS) {
+                for (i = pos; i < BITFRAME_LEN; i++) frame_bits[i] = 0x30 + 0;
+                print_frame(pos);//byte_count
+                header_found = 0;
+                pos = FRAMESTART;
+            }
+            //inc_bufpos();
+            //buf[bufpos] = 'x';
+            continue;   // ...
+        }
+
+        for (i = 0; i < len; i++) {
+
+            inc_bufpos();
+            buf[bufpos] = 0x30 + bit;  // Ascii
+
+            if (!header_found) {
+                header_found = compare2();
+                //if (header_found) fprintf(stdout, "[%c] ", header_found>0?'+':'-');
+                if (header_found < 0) option_inv ^= 0x1;
+                // printf("[%c] ", option_inv?'-':'+');
+            }
+            else {
+                frame_bits[pos] = 0x30 + bit;  // Ascii
+                pos++;
+
+                if (pos == BITFRAME_LEN) {
+                    print_frame(pos);//FRAME_LEN
+                    header_found = 0;
+                    pos = FRAMESTART;
+                }
+            }
+
+        }
+        if (header_found && option_b==1) {
+            bitstart = 1;
+
+            while ( pos < BITFRAME_LEN ) {
+                if (read_rawbit(fp, &bit) == EOF) break;
+                frame_bits[pos] = 0x30 + bit;
+                pos++;
+            }
+            frame_bits[pos] = '\0';
+            print_frame(pos);//FRAME_LEN
+
+            header_found = 0;
+            pos = FRAMESTART;
+        }
+    }
+
+}
+*/
+
 static void sendpils(uint32_t m)
 {
    uint32_t i;
@@ -2028,7 +2211,8 @@ static void demodbytepilot(uint32_t m, char d)
 			osic_WrFixed((float)(long0), 6L, 1UL);
 			osi_WrStr(" height=", 9ul);
 			osic_WrFixed((float)heig, 1L, 1UL);
-			osi_WrStrLn("m ", 3ul);
+			osi_WrStr("m ", 3ul);
+			printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
 		    }
 
 		    sendpils(m);    //send data to udp port - our job here is done.
@@ -2045,7 +2229,8 @@ static void demodbytepilot(uint32_t m, char d)
 		    	    osic_WrFixed((float)(long0), 6L, 1UL);
 		    	    osi_WrStr(" !height=", 10ul);
 		    	    osic_WrFixed((float)heig, 1L, 1UL);
-		    	    osi_WrStrLn("m ", 3ul);
+		    	    osi_WrStr("m ", 3ul);
+			    printf("***BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
 		        }
 
 		/*	for (cz_1 = 15UL; cz_1<50; cz_1++) {anonym->rxbuf[cz_1]=0UL;}   //fill in not relevant data with 0
@@ -2056,7 +2241,7 @@ static void demodbytepilot(uint32_t m, char d)
 			sendpils(m); //send data to sondemod
 		   }
 		}
-		printf("OK: %u, NOK:%u, CNT:%u  CAL:%u\r\n",pok,nok,cnt,(unsigned int)(100*pok/nok));
+//		printf("OK: %u, NOK:%u, CNT:%u  CAL:%u\r\n",pok,nok,cnt,(unsigned int)(100*pok/nok));
             }
 	    
             if (anonym->rxp==48UL) {              
@@ -2378,7 +2563,8 @@ static void decode41(uint32_t m)
             osi_WrStr("R", 2ul);
          }
          Wrtune(chan[m].adcdc, chan[m].adcmax);
-         osi_WrStrLn("", 1ul);
+         osi_WrStr("", 1ul);
+	 printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
       }
    }
    if (nameok>0UL) sendrs41(m);
