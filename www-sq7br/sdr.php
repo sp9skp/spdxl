@@ -99,7 +99,7 @@ if (($handle = @fopen($fil, "r")) !== FALSE) {
 	    $enf=" checked ";
 	else
 	    $enf="";
-        echo '<tr><td>'.$row.'</td><td><input type="checkbox" name="e[]" value="'.$row.'"'.$enf.'><br></td><td>FM</td><td><input type="text" name="f[]" maxlength=7 size=4 value="'.$data[1].'"></td>';
+        echo '<tr><td>'.$row.'</td><td><input type="checkbox" name="e[]" value="'.$row.'"'.$enf.'><br></td><td>FM</td><td><input type="text" name="f[]" maxlength=7 size=6 value="'.$data[1].'"></td>';
 	echo '<td><input type="text" name="afc[]" maxlength="2" size="1" value='.$data[2].'></td><td><input type="text" name="afo[]" maxlength="6" size="4" value='.$data[3].'></td>';
 	echo '<td><input type="text" name="sq[]" maxlength="3" size="2" value='.$data[4].'></td><td><input type="text" name="lp[]" maxlength="3" size="3" value='.$data[5].'></td>';
 	echo '<td><input type="text" name="ifw[]" maxlength="6" size="4" value='.$data[6].'></td><td><input type="text" name="com[]" maxlength="25" size="10" value='.substr($data[7],1).'></td></tr>';
