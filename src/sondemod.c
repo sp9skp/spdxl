@@ -3715,10 +3715,12 @@ extern int main(int argc, char **argv)
    
    if(disSKP==0){
 	if(h2ip("skp.wodzislaw.pl",ip)){
-	    printf("\r\nCan't resolve DNS address\r\n");
-	    return 0;
+	    printf("\r\nCan't resolve DNS address using 194.140.233.120\r\n");
+		sprintf(dbAddr,"http://194.140.233.120:81/sondy.php");
+	    //return 0;
+	}else{
+		sprintf(dbAddr,"http://%s:81/sondy.php",ip);
 	}
-	sprintf(dbAddr,"http://%s:81/sondy.php",ip);
    }
    for(i=0;i<30;i++)
     dBs[i].name[0]=0;
