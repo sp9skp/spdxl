@@ -763,7 +763,7 @@ static void Config(void)
          struct PILS * anonym5 = &chan[c].pils;
          anonym5->configbaud = 4800UL;
          anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate; //4800
-         initafir(anonym5->afirtab, 0UL, 9600UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
+         initafir(anonym5->afirtab, 0UL, 9200UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
          anonym5->baudfine = 0L;
          anonym5->noise = 0.0f;
          anonym5->bitlev = 0.0f;
@@ -3406,6 +3406,12 @@ static char sendDFM(uint32_t m){
     char tmp[50];
     char ret=0;
     s[0]=0;
+    char i;
+
+    for(i=0;i<8;i++)
+	if(chan[m].dfm6.id[i]<48 || chan[m].dfm6.id>57)
+	    return -1; 
+
     if (strlen(chan[m].dfm6.id)>5){
         if ((chan[m].dfm6.sonde_typ & 0xFF) == 6) 
           sprintf(tmp,"D6%08X", chan[m].dfm6.SN6);
