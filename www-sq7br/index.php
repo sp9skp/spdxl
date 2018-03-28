@@ -17,7 +17,7 @@ print("<title>spdxl ".$realIP."</title>");
     if($p=='s') echo "var page='sondy.php';";
     if($p=='A') echo "var page='wf.php';";
     if($p=='PS') echo "var page='processes.php';";
-
+    if($p=='D') echo "var page='display.php';";
 ?>
 
 function getData(){
@@ -70,6 +70,7 @@ function getData(){
 <input style="width:100px" type="button" onClick="location.href='index.php?p=SDRTST2';" value="SDR #2 freq.">
 <input style="width:100px" type="button" onClick="location.href='index.php?p=SDRTST3';" value="SDR #3 freq.">
 <input style="width:100px" type="button" onClick="location.href='index.php?p=SDRTST4';" value="SDR #4 freq.">
+<input style="width:100px" type="button" onClick="location.href='index.php?p=D';" value="OLED">
 
 
 <br><br>
@@ -79,7 +80,7 @@ function getData(){
 
 if ($p=="C") require("conf.php");
 
-if($p=='0' || $p=='' || $p=='s' ) echo "<p id=\"switch_txt\"></p>";
+if($p=='0' || $p=='' || $p=='s' || $p=='D' ) echo "<p id=\"switch_txt\"></p>";
 if( substr($p,0,6)=="SDRTST"  ) include 'sdr.php'; 
 if($p=='A') echo "<p id=\"switch_txt\"></p>";
 if($p=='PS') echo "<p id=\"switch_txt\"></p>";
