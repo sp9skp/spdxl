@@ -8,6 +8,10 @@
  */
 
 
+#define BUFLEN 256
+#define PORT 9930
+
+
 #define X2C_int32
 #define X2C_index32
 #ifndef X2C_H_
@@ -37,6 +41,16 @@
 #ifndef sondeaprs_H_
 #include "sondeaprs.h"
 #endif
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 /* decode RS92, RS41, SRS-C34 and DFM06 Radiosonde by OE5DXL */
 /*FROM rsc IMPORT initrsc, decodersc; */
@@ -368,12 +382,15 @@ time_t oldMTime;
 #include <openssl/md5.h>
 #include <stdio.h>
 #include <time.h>
-#include <curl/curl.h>
 
 #include<sys/socket.h>
-//#include<errno.h> //For errno - the error number
 #include<netdb.h> //hostent
 #include<arpa/inet.h>
+
+struct sockaddr_in serv_addr;
+int sockfd, i, slen=sizeof(serv_addr);
+char UDPbuf[BUFLEN];
+
 
 int h2ip(char * hostname , char* ip)
 {
@@ -557,9 +574,6 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
     char str[1024];
     char hash[40];
 
-    CURL *curl;
-    CURLcode res;
-    char PostFields[300];
     char ToHash[300];
     char Pass[20];
     char dp=strlen(dbPass);
@@ -575,33 +589,22 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 	strcpy(Pass,dbPass);
 	str[0]=0;
 
-	curl = curl_easy_init();
-	if ( curl ){
-    	    curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_data );
-    	    curl_easy_setopt( curl, CURLOPT_URL, dbAddr );
-    
-    	    sprintf( PostFields, "d=%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%s",
+        sprintf( UDPbuf, "S0;0;0;0;%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;1;2;3;4;%s",
                                 name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,mycall);
-    	    //wylicznie hasha
-    	    strcpy(ToHash,PostFields+2);
-    	    strcat(ToHash,Pass);
-    	    char *hash = str2md5(ToHash, strlen(ToHash));
 
-    	    //dopisanie hasha
-    	    strcat(PostFields,";");
-    	    strcat(PostFields,hash);
-    	    curl_easy_setopt( curl, CURLOPT_POSTFIELDS, PostFields );
+    	//wylicznie hasha
+    	strcpy(ToHash,UDPbuf);
+    	strcat(ToHash,Pass);
+    	char *hash = str2md5(ToHash, strlen(ToHash));
 
-    	    // Perform the request, res will get the return code
-    	    res = curl_easy_perform( curl );
+    	//dopisanie hasha
+    	strcat(UDPbuf,";");
+    	strcat(UDPbuf,hash);
 
-    	    // Check for errors
-    	    if ( res == CURLE_OK ) { printf( "Uploaded data\n"); }
-    	    else { printf( "curl_easy_perform() failed: %s\n", curl_easy_strerror( res ) ); }
 
-    	    // always cleanup
-    	    curl_easy_cleanup( curl );
-	}
+        if (sendto(sockfd, UDPbuf, BUFLEN, 0, (struct sockaddr*)&serv_addr, slen)==-1)
+            printf("err: sendto()");
+
     }
 }
 
@@ -3716,12 +3719,25 @@ extern int main(int argc, char **argv)
    if(disSKP==0){
 	if(h2ip("skp.wodzislaw.pl",ip)){
 	    printf("\r\nCan't resolve DNS address using 194.140.233.120\r\n");
-		sprintf(dbAddr,"http://194.140.233.120:81/sondy.php");
+	    sprintf(ip,"/194.140.233.120");
 	    //return 0;
-	}else{
-		sprintf(dbAddr,"http://%s:81/sondy.php",ip);
 	}
    }
+
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
+        printf("err: socket\n");
+
+    bzero(&serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    if (inet_aton(ip, &serv_addr.sin_addr)==0)
+    {
+        fprintf(stderr, "inet_aton() failed\n");
+        exit(1);
+    }
+
+
+
    for(i=0;i<30;i++)
     dBs[i].name[0]=0;
 

@@ -236,7 +236,7 @@ gps2digipos: $(OBJ_GPS2DIGIPOS) $(OBJ_COMMON)
 	$(STRIP) gps2digipos $(STRIPFLAGS)
 
 sondemod: $(OBJ_SONDEMOD) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o sondemod  $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm -L/usr/lib/i386-linux-gnu -lssl -lcrypto -lcurl -fsigned-char
+	$(CC) $(LFLAGS) -o sondemod  $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm -L/usr/lib/i386-linux-gnu -lssl -lcrypto -fsigned-char
 	$(STRIP) sondemod $(STRIPFLAGS)
 
 sondeudp: $(OBJ_SONDEUDP) $(OBJ_COMMON)
