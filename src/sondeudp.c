@@ -761,9 +761,9 @@ static void Config(void)
       }
       { // with
          struct PILS * anonym5 = &chan[c].pils;
-         anonym5->configbaud = 4800UL;
+         anonym5->configbaud = 4808UL;
          anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate; //4800
-         initafir(anonym5->afirtab, 0UL, 9200UL, X2C_DIVR((float)(chan[c].configequalizer),100.0f));
+         initafir(anonym5->afirtab, 0UL, 2200UL, X2C_DIVR((float)(chan[c].configequalizer+80),100.0f));
          anonym5->baudfine = 0L;
          anonym5->noise = 0.0f;
          anonym5->bitlev = 0.0f;
@@ -2141,16 +2141,16 @@ static void demodbytepilot(uint32_t m, char d)
          i = anonym->synp;
          ++anonym->synp;
          if (anonym->synp>39UL) anonym->synp = 0UL; 
-         j = 30UL;  //30 bytes in header (3*10)
+         j = 40UL;  //30 bytes in header (3*10)
          normc = 0UL;
          revc = 0UL;
          do {
             --j;
-            if (("001010101100101010110100000001"[j]=='1')==anonym->synbuf[i]) ++normc;
+            if (("0010101011001010101100101010110100000001"[j]=='1')==anonym->synbuf[i]) ++normc;
             else ++revc;
-            if (i==0UL) i = 29UL;
+            if (i==0UL) i = 39UL;
             else --i;
-         } while (!(j==0UL || normc>2UL && revc>2UL));
+         } while (!(j==0UL || normc>4UL && revc>4UL));
          anonym->headok = normc==0UL || revc==0UL;
          anonym->rev = normc<revc;
          if (j==0UL) {
@@ -2212,7 +2212,7 @@ static void demodbytepilot(uint32_t m, char d)
 			osi_WrStr(" height=", 9ul);
 			osic_WrFixed((float)heig, 1L, 1UL);
 			osi_WrStrLn("m ", 3ul);
-			//printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
+			printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
 		    }
 
 		    sendpils(m);    //send data to udp port - our job here is done.
@@ -3407,17 +3407,17 @@ static char sendDFM(uint32_t m){
     char ret=0;
     s[0]=0;
     char i;
-
-    for(i=0;i<8;i++)
-	if(chan[m].dfm6.id[i]<48 || chan[m].dfm6.id>57)
-	    return -1; 
-
+    
     if (strlen(chan[m].dfm6.id)>5){
+
         if ((chan[m].dfm6.sonde_typ & 0xFF) == 6) 
           sprintf(tmp,"D6%08X", chan[m].dfm6.SN6);
         if ((chan[m].dfm6.sonde_typ & 0xFF) == 9) 
           sprintf(tmp,"D9%08u", chan[m].dfm6.SN9);
 	tmp[10]=0;
+	for(i=2;i<10;i++)
+	    if(tmp[i]<48 || tmp[i]>57)
+		return -1; 
 	strcat(s,tmp);
 
 	sprintf(tmp,"%04d", chan[m].dfm6.frnr);
@@ -3475,7 +3475,6 @@ static char sendDFM(uint32_t m){
 	
         tmp[16]=0;
         strcat(s,tmp);
-	printf("%s\r\n",s);
 	alludp(chan[m].udptx, 88, s, 88);
 
     }
