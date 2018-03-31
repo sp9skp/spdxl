@@ -3696,7 +3696,6 @@ static void udprx(void)
    }
    else if (len==88L) {
       decodedfm6(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
-	printf("**********DFM\n");
    }
    else if (len==520L) {
       decoders41(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
