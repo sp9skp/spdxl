@@ -2,18 +2,16 @@
 $addn=0;
 $save=0;
 
-    if($p=='1')
-	$fil="/tmp/sdrcfg0.txt";
-    if($p=='2')
-	$fil="/tmp/sdrcfg1.txt";
-
-    if($p=='3')
-	$fil="/tmp/sdrcfg2.txt";
-
-    if($p=='4')
-	$fil="/tmp/sdrcfg3.txt";
-
-
+    $i=0;
+    $fil = scandir('CFG');
+    foreach ($fil as $key => $value) {
+        if (!in_array($value,array(".",".."))){
+	    if($p==$i)
+		$fil="CFG/".$value;		
+		$fname=$value;
+        }
+        $i++;
+    }
 
 if($_POST["dodaj"]=="Dodaj")
     $addn=1;
@@ -116,6 +114,7 @@ if (($handle = fopen($fil, "r")) !== FALSE) {
     }
   }
   fclose($handle);
+  copy($fil,'/tmp/'.$fname);
 }
 if($addn){
         echo '<tr bgcolor=#FFAAAA><td>'.$row.'</td><td><input type="checkbox" name="e[]" value="e0"><br></td><td>FM</td><td><input type="text" name="f[]" maxlength=7 size=4 value="'.$_POST["nqrg"].'"></td>';

@@ -2,9 +2,9 @@
 
 /root/SDR/RINEX
 
-cp /root/SDR/sdrcfg0.txt /tmp/sdrcfg0.txt
-cp /root/SDR/sdrcfg1.txt /tmp/sdrcfg1.txt
-cp /root/SDR/sdrcfg2.txt /tmp/sdrcfg2.txt
+cp /var/www/html/CFG/sdrcfg0.txt /tmp/sdrcfg0.txt
+cp /var/www/html/CFG/sdrcfg1.txt /tmp/sdrcfg1.txt
+cp /var/www/html/CFG/sdrcfg2.txt /tmp/sdrcfg2.txt
 
 mkfifo /root/SDR/fifo0
 mkfifo /root/SDR/fifo1
@@ -64,5 +64,9 @@ screen -S rd -p sondemod -X stuff $'while [ 1 ] ; do /root/SDR/bin/sondemod -v -
 
 screen -S rd -X screen -t udpgate
 screen -S rd -p udpgate -X stuff $'/root/SDR/bin/udpgate4 -v -R 127.0.0.1:4011:4010 -s N0CALL-15 -n 20:/root/SDR/beacon.txt  -t 14580 -g poland.aprs2.net:14580 -p APRS_PASS \n'
+
+screen -S rd -X screen -t rotate
+screen -S rd -p almanach -X stuff $'/root/SDR/ROTATE \n'
+
 
 #radiosondy.info
