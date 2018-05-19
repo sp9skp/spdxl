@@ -1401,29 +1401,53 @@ static void doozon(const char s[], uint32_t s_len,
 } /* end doozon() */
 
 
+/*
 static void calibfn(char obj[], uint32_t obj_len, char fn[],uint32_t fn_len)
 {
    uint32_t i,len;
 
    X2C_PCOPY((void **)&obj,obj_len);
-   aprsstr_Append(fn, fn_len, obj, obj_len);
 
-   i = 0UL;
-   while (i<=fn_len-1 && fn[i]) {
-      if (((uint8_t)fn[i]<'0' || (uint8_t)fn[i]>'9') && ((uint8_t)fn[i]<'A' || (uint8_t)fn[i]>'Z')) {
-         fn[0UL] = 0;
+   while (i<=obj_len-1 && obj[i]) {
+      if (((uint8_t)obj[i]<'0' || (uint8_t)obj[i]>'9') && ((uint8_t)obj[i]<'A' || (uint8_t)obj[i]>'Z')) {
+         osi_WrStr("bad sonde serial obj: ", 23ul);
+         osi_WrStr(obj, 1024ul);
+	osi_WrStr("\n", 2ul);
+         obj[0UL] = 0;
          goto label;
       }
       ++i;
    }
 
-
-   aprsstr_Assign(fn, fn_len, "/tmp/", 6);
+   aprsstr_Assign(fn, fn_len, "/tmp/", 6ul);
    aprsstr_Append(fn, fn_len, obj, obj_len);
    aprsstr_Append(fn, fn_len, ".cal", 5ul);
+
    label:;
+
    X2C_PFREE(obj);
-} /* end calibfn() */
+} // end calibfn() 
+*/
+
+
+
+static void calibfn(char obj[], uint32_t obj_len, char fn[],uint32_t fn_len)
+{
+   uint32_t i,len;
+
+   X2C_PCOPY((void **)&obj,obj_len);
+
+   sprintf(fn,"/tmp/%s.cal",obj);    
+
+   i = 0UL;
+   while (i<=obj_len-1 && obj[i]) {
+      if (((uint8_t)obj[i]<'0' || (uint8_t)obj[i]>'9') && ((uint8_t)obj[i]<'A' || (uint8_t)obj[i]>'Z')) {
+         fn[0UL] = 0;
+      }
+      ++i;
+   }
+   X2C_PFREE(obj);
+} // end calibfn() 
 
 
 static void readcontext(struct CONTEXTR9 * cont, char objname0[],
