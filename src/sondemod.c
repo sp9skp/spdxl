@@ -2554,7 +2554,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     sec= atoi(tmp);
 
 
-    printf("%s[%i][%04i-%02i-%02i %02i:%02i:%02i]: La:%f, Lo:%f, Alt:%5.0f vH:%5.2f vV:%5.2f D:%3.1f T:%4.2f T1:%4.2f Vcc:%4.2f %6.3fMHz\r\n",id,frno,yr,mon,day,hr,min,sec,lat,lon,alt,vH,vV,Dir,T,T1,Vcc,frq);
+    printf("%s[%i][%04i-%02i-%02i %02i:%02i:%02i]: La:%f, Lo:%f, Alt:%5.0f vH:%5.2f vV:%5.2f D:%3.1f T:%4.2f T1:%4.2f Vcc:%4.2f %6.3fMHz\r\n",id,frno,yr,mon,day,hr,min,sec,lat/1.7453292519943E-2,lon/1.7453292519943E-2,alt,vH,vV,Dir,T,T1,Vcc,frq);
 
 
    getcall(cb, 10ul, usercall, 11ul);
