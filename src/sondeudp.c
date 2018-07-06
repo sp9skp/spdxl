@@ -35,6 +35,8 @@
 #endif
 #include <stdio.h>
 
+#include <time.h>
+
 /* demodulate RS92 sonde (2400bit/s manchester)
    and SRS-C34 (2400Bd AFSK 2000/3800Hz
    and DFM06 (2500bit/s manchester)
@@ -224,6 +226,13 @@ struct PILS {
    char synbuf[64];
    char fixbytes[56];           //not sure what for
    uint8_t fixcnt[56];
+   time_t lastfr;
+   double poklat;
+   double poklon;
+   double pokalt;
+
+
+
 //   int16_t configequalizer;
 };
 //-------------------------------------------------------
@@ -432,11 +441,6 @@ static uint32_t dfmnametyp;
 
 static uint16_t CRCTAB[256];
 
-static double pils_poklat;
-
-static double pils_poklon;
-
-static double pils_pokalt;
 
 
 static void Error(char text[], uint32_t text_len)
@@ -773,6 +777,9 @@ static void Config(void)
          anonym5->rxbitc = 0UL;
          anonym5->rxbyte = 0UL;
          anonym5->synp = 0UL;
+	 anonym5->poklat=-1;
+	 anonym5->poklon=-1;
+
       }
 
 
@@ -2053,12 +2060,12 @@ static void sendpils(uint32_t m)
          chan[m].pils.rxbuf[5U] = 0;
          chan[m].pils.rxbuf[6U] = 0;
 
-	 chan[m].pils.rxbuf[55U] = chan[m].freq[0];;
-	 chan[m].pils.rxbuf[56U] = chan[m].freq[1];;
-	 chan[m].pils.rxbuf[57U] = chan[m].freq[2];;
-	 chan[m].pils.rxbuf[58U] = chan[m].freq[3];;
-	 chan[m].pils.rxbuf[59U] = chan[m].freq[4];;
-	 chan[m].pils.rxbuf[60U] = chan[m].freq[5];;
+	 chan[m].pils.rxbuf[55U] = chan[m].freq[0];
+	 chan[m].pils.rxbuf[56U] = chan[m].freq[1];
+	 chan[m].pils.rxbuf[57U] = chan[m].freq[2];
+	 chan[m].pils.rxbuf[58U] = chan[m].freq[3];
+	 chan[m].pils.rxbuf[59U] = chan[m].freq[4];
+	 chan[m].pils.rxbuf[60U] = chan[m].freq[5];
       }
       alludp(chan[m].udptx, 55UL+6UL, chan[m].pils.rxbuf, 66ul);
       ///osi_WrStrLn("sending UDP data...",19UL);
@@ -2128,6 +2135,7 @@ static void demodbytepilot(uint32_t m, char d)
    double   lat;
    double   long0;
    double   heig;
+   int	    ok;
 
   
    struct PILS * anonym;
@@ -2196,12 +2204,14 @@ static void demodbytepilot(uint32_t m, char d)
 		long0=(double)getint32r(anonym->rxbuf,55UL,offs+4UL)*0.000001;
                 heig=(double)getint32r(anonym->rxbuf,55UL,offs+8UL)*.01; 
                 cnt++;
-		if (crc == crc16rev(anonym->rxbuf, 48UL)) {
-                    for (cz_1 = 49UL; cz_1>1UL; cz_1--) {anonym->rxbuf[cz_1+5UL] = anonym->rxbuf[cz_1];}   //move cells by 5 up
-		
-		    pils_poklat=lat;
-		    pils_poklon=long0;
-		    pils_pokalt=heig;
+
+
+
+		if (crc == crc16rev(anonym->rxbuf, 48UL) && lat>0 && lat<89.9 && long0>0 && long0<179.9 && heig>1 && heig<35000) {
+		    anonym->poklat=lat;
+		    anonym->poklon=long0;
+		    anonym->pokalt=heig;
+		    anonym->lastfr=time(NULL);
   		    //if (verb) osi_WrStr(" CRC [OK+] ",12UL);
             	    if  (verb) {             //if more verbous print lat/long/h
 			pok++;
@@ -2215,13 +2225,29 @@ static void demodbytepilot(uint32_t m, char d)
 			osi_WrStrLn("m ", 3ul);
 			printf("BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
 		    }
-
-		    sendpils(m);    //send data to udp port - our job here is done.
+                    for (cz_1 = 49UL; cz_1>1UL; cz_1--) {anonym->rxbuf[cz_1+5UL] = anonym->rxbuf[cz_1];}   //move cells by 5 up
+		    sendpils(m);    
 		}   //crc ok
 		else {
 	    	    if (verb) osi_WrStrLn(" parity error",14UL);
 		    //if position not too far from last good one....
-		    if ((fabs(pils_poklat-lat)<0.01f) && (fabs(pils_poklon-long0)<0.01f) && (abs(pils_pokalt-heig)<500)) {
+
+		    ok=0;
+		    if(time(NULL)-anonym->lastfr<=60){
+			if ((fabs(anonym->poklat-lat)<0.003f) && (fabs(anonym->poklon-long0)<0.003f) && (abs(anonym->pokalt-heig)<1500)) 
+			    ok=1;
+		    }else if ((time(NULL)-anonym->lastfr>60) && (time(NULL)-anonym->lastfr<=1800)){
+			if ((fabs(anonym->poklat-lat)<0.03f) && (fabs(anonym->poklon-long0)<0.03f) && (abs(anonym->pokalt-heig)<4500)) 
+			    ok=1;
+		    }
+    
+		    if (ok || (anonym->poklat==-1 && anonym->poklon==-1 && lat>0 && lat<89.9 && long0>0 && long0<179.9 && heig>1 && heig<35000)) {
+
+			anonym->poklat=(lat+anonym->poklat)/2;
+			anonym->poklon=(long0+anonym->poklon)/2;
+			anonym->pokalt=(heig+anonym->pokalt)/2;
+			anonym->lastfr=time(NULL);
+
 			if (verb) {
 			    nok++;
 		    	    osi_WrStr(" !Lat=",6ul);
@@ -2234,10 +2260,6 @@ static void demodbytepilot(uint32_t m, char d)
 			    printf("***BR: %li:%li\r\n",anonym->configbaud,anonym->baudfine);
 		        }
 
-		/*	for (cz_1 = 15UL; cz_1<50; cz_1++) {anonym->rxbuf[cz_1]=0UL;}   //fill in not relevant data with 0
-			crc=crc16rev(anonym->rxbuf, 48UL);  //calculate new checksum
-			anonym->rxbuf[49UL]=(crc&255UL);
-			anonym->rxbuf[48UL]=(crc>>8UL);*/
 			for (cz_1 = 49UL; cz_1>1UL; cz_1--) {anonym->rxbuf[cz_1+5UL] = anonym->rxbuf[cz_1];}   //move cells by 5 up
 			sendpils(m); //send data to sondemod
 		   }

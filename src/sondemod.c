@@ -2553,12 +2553,26 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     tmp[0]=rxb[81];    tmp[1]=rxb[82];    tmp[2]=0;
     sec= atoi(tmp);
 
-
-    printf("%s[%i][%04i-%02i-%02i %02i:%02i:%02i]: La:%f, Lo:%f, Alt:%5.0f vH:%5.2f vV:%5.2f D:%3.1f T:%4.2f T1:%4.2f Vcc:%4.2f %6.3fMHz\r\n",id,frno,yr,mon,day,hr,min,sec,lat/1.7453292519943E-2,lon/1.7453292519943E-2,alt,vH,vV,Dir,T,T1,Vcc,frq);
-
-
    getcall(cb, 10ul, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
+
+   if (sondeaprs_verb && fromport>0UL) {
+      osi_WrStr("UDP:", 5ul);
+      aprsstr_ipv4tostr(ip, s, 1001ul);
+      osi_WrStr(s, 1001ul);
+      osi_WrStr(":", 2ul);
+      osic_WrINT32(fromport, 1UL);
+      if (usercall[0U]) {
+         osi_WrStr(" (", 3ul);
+         osi_WrStr(usercall, 11ul);
+         osi_WrStr(")", 2ul);
+      }
+      osi_WrStrLn("", 1ul);
+   }
+
+   printf("%s[%i][%04i-%02i-%02i %02i:%02i:%02i]: La:%f, Lo:%f, Alt:%5.0f vH:%5.2f vV:%5.2f D:%3.1f T:%4.2f T1:%4.2f Vcc:%4.2f %6.3fMHz\r\n",id,frno,yr,mon,day,hr,min,sec,lat/1.7453292519943E-2,lon/1.7453292519943E-2,alt,vH,vV,Dir,T,T1,Vcc,frq);
+
+
    rt = 0UL;
    for (j = 0UL; j<=3UL; j++) {
       rt = rt*256UL+(uint32_t)(uint8_t)rxb[i];
@@ -3629,7 +3643,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
 */
 
     if (lat>89.9) {lat=0.0;}                                //in case lat/lon invalid
-    if (long0>179.0) {long0=0.0;}
+    if (long0>179.9) {long0=0.0;}
 		
     if (heig<(-500.0) || heig>50000.0) {                    //make sure that wrong altitude eliminates all
         lat = 0.0;
