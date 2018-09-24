@@ -207,22 +207,18 @@ void osic_CloseSock(int32_t fd)
 	close(fd);
 }
 
-int32_t osic_RdBin(int32_t fd,
-		char buf[], uint32_t buf_len,
-		uint32_t size)
+int32_t osic_RdBin(int32_t fd,	char buf[], uint32_t buf_len,	uint32_t size)
 {
-	if (size > (buf_len-1) + 1)
-		size = (buf_len-1)+1;
+	if (size > buf_len)
+		size = buf_len;
 	return read(fd, (char *)buf, size);
 }
 
-void osic_WrBin(int32_t fd, char buf[],
-		uint32_t buf_len,
-		uint32_t size)
+void osic_WrBin(int32_t fd, char buf[],	uint32_t buf_len, uint32_t size)
 {
 	int rc;
-	if (size > (buf_len-1)+1)
-		size = (buf_len-1)+1;
+	if (size > buf_len)
+		size = buf_len;
 	rc = write(fd, (char *)buf, size);
 	(void)rc;
 }

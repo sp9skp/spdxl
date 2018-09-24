@@ -1365,8 +1365,7 @@ static void decodeframe92(uint32_t m)
                 /* +crc */
          ++p;
          if (maxchannels>0UL) {
-            osic_WrINT32(m+1UL, 1UL);
-            osi_WrStr(":", 2ul);
+	    printf("%02i:",m+1);
          }
          osi_WrStr("R92 ", 5ul);
          if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 256ul, 8L,
@@ -1602,8 +1601,7 @@ static SET256 _cnst1 = {0x03FFFFF0UL,0x00000003UL,0x00000000UL,0x00000018UL,
 static void WrChan(int32_t c)
 {
    if (maxchannels>0UL) {
-      osic_WrINT32((uint32_t)(c+1L), 1UL);
-      osi_WrStr(":", 2ul);
+      printf("%02i:",c+1);
    }
 } /* end WrChan() */
 
@@ -2184,8 +2182,7 @@ static void demodbytepilot(uint32_t m, char d)
 		 crc = (anonym->rxbuf[48UL]<<8UL) | anonym->rxbuf[49UL];
 		 if (verb) {
 		    if (maxchannels>0UL) {
-                       osic_WrINT32(m+1UL, 1UL);
-                       osi_WrStr(":", 2ul);            //if more than one channel print channel No.
+			printf("%02i:",m+1);
                     }
 		    osi_WrStr("PS ",4UL);
 		 }	 
@@ -2546,8 +2543,7 @@ static void decode41(uint32_t m)
       } while (!(allok || try0>2UL));
       if (verb && nameok>0UL) {
          if (maxchannels>0UL) {
-            osic_WrINT32(m+1UL, 1UL);
-            osi_WrStr(":", 2ul);
+	      printf("%02i:",m+1);
          }
          osi_WrStr("R41 ", 5ul);
          for (i = 0UL; i<=7UL; i++) {
@@ -3472,6 +3468,7 @@ static char sendDFM(uint32_t m){
         tmp[4] = chan[m].freq[4];
         tmp[5] = chan[m].freq[5];
 	tmp[6] = 0;
+
 	if(strlen(tmp)>2)
 	    strcat(s,tmp);
 	else
@@ -3701,8 +3698,7 @@ static void demodframe34(uint32_t channel)
       }
       if (verb && ok0 || verb2) {
          if (maxchannels>0UL) {
-            osic_WrINT32(channel+1UL, 1UL);
-            osi_WrStr(":", 2ul);
+	    printf("%02i:",channel+1);
          }
          if (anonym->c50) {
             osi_WrStr("C50 ", 5ul);
@@ -4230,13 +4226,16 @@ static void getadc(void)
 
 	 sprintf(tmps,"%c%c%c%c\n",adcbuf[0],adcbuf[1],adcbuf[2],adcbuf[3]);
 	 
+
 	 if(tmps[0]=='9' && tmps[1]=='S' && tmps[2]=='K' && tmps[3]=='P'){ //freq table
 //	    printf("Update channel table\n");
 	    pos=4;
 	    mod=1;
             chno=0;
 	    while(adcbuf[pos]!=0){
-		//chan[chno].nr=(adcbuf[pos]-48)*10+adcbuf[pos+1]-48;
+		chno=(int)(((char)adcbuf[pos]-48)*10+((char)adcbuf[pos+1]-48)-1);
+		if(chno<0) break;
+
 		chan[chno].freq[0]=adcbuf[pos+2];
 		chan[chno].freq[1]=adcbuf[pos+3];
 		chan[chno].freq[2]=adcbuf[pos+4];
@@ -4245,8 +4244,8 @@ static void getadc(void)
 		chan[chno].freq[5]=adcbuf[pos+7];
 		chan[chno].freq[6]=0;
 		pos+=8;
+		//printf("CH:%i QRG:",chno);
 		//printf(chan[chno].freq);printf("\n");
-		chno++;
 	    }
 	 }else if(mod==0){
              adcbufsamps = 0UL;

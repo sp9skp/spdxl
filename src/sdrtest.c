@@ -558,7 +558,7 @@ static void skip(const char s[], uint32_t s_len, uint32_t * p)
 // send freq table
 static void updateChanT(){
     
-   int i;
+   int i,j,l;
    char tmp[15],tmp1[25];
    double fhz;
 
@@ -569,43 +569,48 @@ static void updateChanT(){
 
      double tt;
 
-        tt=-1.0;
+        tt=0;
         if(rxx[i].df>0) tt=0.5;
 
 
-   sndbufft[0]=0;
-   strcat(sndbufft,"9 S K P ");
-
+   j=0;
    while (prx[i]) {
+      if(j==0){
+	   sndbufft[0]=0;
+	   strcat(sndbufft,"9 S K P ");
+      }
       sprintf(tmp,"%02i%06li",i+1,(long int)((midfreq/1000+(int32_t)rxx[i].df*khz+tt)));
       tmp1[0]=tmp[0];
-      tmp1[1]='0';
+      tmp1[1]=' ';
       tmp1[2]=tmp[1];
-      tmp1[3]='0';
+      tmp1[3]=' ';
       tmp1[4]=tmp[2];
-      tmp1[5]='0';
+      tmp1[5]=' ';
       tmp1[6]=tmp[3];
-      tmp1[7]='0';
+      tmp1[7]=' ';
       tmp1[8]=tmp[4];
-      tmp1[9]='0';
+      tmp1[9]=' ';
       tmp1[10]=tmp[5];
-      tmp1[11]='0';
+      tmp1[11]=' ';
       tmp1[12]=tmp[6];
-      tmp1[13]='0';
+      tmp1[13]=' ';
       tmp1[14]=tmp[7];
-      tmp1[15]='0';
+      tmp1[15]=' ';
       tmp1[16]=tmp[8];
-      tmp1[17]='0';
+      tmp1[17]=' ';
       tmp1[18]=0;
-
       strcat(sndbufft,tmp1);
       ++i;
-   }
-   if(fd){
-        osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
-	osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
-	osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
-	osi_WrBin(fd, (char *)sndbufft, 1024u/1u, 1024);
+      j++;
+      if(j>14){
+	if(fd){
+	    l=strlen(sndbufft);
+	    sndbufft[l]=0;
+	    sndbufft[l+1]=0;
+    	    osi_WrBin(fd, (char *)sndbufft, 1024, 1024);
+	    j=0;
+	}
+      }
    }
 
 }
