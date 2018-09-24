@@ -441,13 +441,41 @@ int save_csv()
 
     stream = fopen("/tmp/sonde.csv", "w");
 
-    for(i=29;i>-1;i--){
-	if(dBs[i].name[0]!=0){
-	    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[i].name,dBs[i].lat,dBs[i].lon,dBs[i].alt,dBs[i].speed,dBs[i].climb,dBs[i].dir,dBs[i].frq,dBs[i].time);
-	    fputs(str,stream);
+    //najnowszy wpis
+    unsigned long max=0,maxmax=0;
+    int maxpos=0;
+
+    for(i=0;i<30;i++){
+	if(max<dBs[i].time){
+	    max=dBs[i].time;
+	    maxpos=i;
 	}
     }
+
+    if(dBs[maxpos].name[0]!=0){
+        sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[maxpos].name,dBs[maxpos].lat,dBs[maxpos].lon,dBs[maxpos].alt,dBs[maxpos].speed,dBs[maxpos].climb,dBs[maxpos].dir,dBs[maxpos].frq,dBs[maxpos].time);
+        fputs(str,stream);
+    }
+
+    maxmax=max;
+    max=0;
+
+    for(j=0;j<29;j++){
+      for(i=0;i<30;i++){
+	if(max<dBs[i].time && dBs[i].time<maxmax){
+	    max=dBs[i].time;
+	    maxpos=i;
+        }
+      }
+        if(dBs[maxpos].name[0]!=0){
+    	    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[maxpos].name,dBs[maxpos].lat,dBs[maxpos].lon,dBs[maxpos].alt,dBs[maxpos].speed,dBs[maxpos].climb,dBs[maxpos].dir,dBs[maxpos].frq,dBs[maxpos].time);
+    	    fputs(str,stream);
+        }
+        maxmax=max;
+        max=0;
+    }
     if(stream) fclose(stream);
+
 }
 
 
@@ -513,6 +541,7 @@ int read_csv()
         }
         fclose(stream);
     }
+
 
 }
 
@@ -2553,8 +2582,11 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     tmp[0]=rxb[81];    tmp[1]=rxb[82];    tmp[2]=0;
     sec= atoi(tmp);
 
-   getcall(cb, 10ul, usercall, 11ul);
+    tmp[0]=rxb[83]; tmp[1]=rxb[84]; tmp[2]=rxb[85]; tmp[3]=rxb[86]; tmp[4]=rxb[87]; tmp[5]=0;
+
+   getcall(tmp, 6, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
+//    printf("\nDEB: %s:%s\n",usercall,tmp);
 
    if (sondeaprs_verb && fromport>0UL) {
       osi_WrStr("UDP:", 5ul);
@@ -2895,10 +2927,10 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    unsigned long subversionMajor;
    unsigned long subversionMinor;
 
-
-
    getcall(rxb, rxb_len, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
+
+    printf("\nDEB: %s:%s\n",usercall,mycall);
    if (sondeaprs_verb && fromport>0UL) {
       osi_WrStr("UDP:", 5ul);
       aprsstr_ipv4tostr(ip, s, 1001ul);
@@ -3732,7 +3764,7 @@ static void udprx(void)
    else if (len==22L+6L) {
       decodec34(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
    }
-   else if (len==88L) {
+   else if (len==88L+5) {
       decodedfm6(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
    }
    else if (len==520L) {

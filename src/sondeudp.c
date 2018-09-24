@@ -3495,7 +3495,17 @@ static char sendDFM(uint32_t m){
 	
         tmp[16]=0;
         strcat(s,tmp);
-	alludp(chan[m].udptx, 88, s, 88);
+	//dopisanie znaku TODO
+
+        tmp[0] = (char)(chan[m].mycallc/16777216UL);
+        tmp[1] = (char)(chan[m].mycallc/65536UL&255UL);
+        tmp[2] = (char)(chan[m].mycallc/256UL&255UL);
+        tmp[3] = (char)(chan[m].mycallc&255UL);
+        if (chan[m].mycallc>0UL) tmp[4] = chan[m].myssid;
+	else tmp[4] = '\020';
+	strcat(s,tmp);
+
+	alludp(chan[m].udptx, 88+5, s, 88+5);
 
     }
 
