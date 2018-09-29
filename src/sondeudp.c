@@ -276,6 +276,7 @@ struct DFM6 {
     int sonde_typ;
     uint32_t SN6;
     uint32_t SN9;
+    uint32_t SN15;
     int yr; int mon; int day;
     int hr; int min; float sek;
     double lat; double lon; double alt;
@@ -1607,6 +1608,160 @@ static void WrChan(int32_t c)
 
 
 
+// Temperatur Sensor
+// NTC-Thermistor Shibaura PB5-41E
+//
+float M10get_Temp(uint32_t m) {
+// NTC-Thermistor Shibaura PB5-41E
+// T00 = 273.15 +  0.0 , R00 = 15e3
+// T25 = 273.15 + 25.0 , R25 = 5.369e3
+// B00 = 3450.0 Kelvin // 0C..100C, poor fit low temps
+// [  T/C  , R/1e3 ] ( [P__-43]/2.0 ):
+// [ -50.0 , 204.0 ]
+// [ -45.0 , 150.7 ]
+// [ -40.0 , 112.6 ]
+// [ -35.0 , 84.90 ]
+// [ -30.0 , 64.65 ]
+// [ -25.0 , 49.66 ]
+// [ -20.0 , 38.48 ]
+// [ -15.0 , 30.06 ]
+// [ -10.0 , 23.67 ]
+// [  -5.0 , 18.78 ]
+// [   0.0 , 15.00 ]
+// [   5.0 , 12.06 ]
+// [  10.0 , 9.765 ]
+// [  15.0 , 7.955 ]
+// [  20.0 , 6.515 ]
+// [  25.0 , 5.370 ]
+// [  30.0 , 4.448 ]
+// [  35.0 , 3.704 ]
+// [  40.0 , 3.100 ]
+// -> Steinhart–Hart coefficients (polyfit):
+    float p0 = 1.07303516e-03,
+          p1 = 2.41296733e-04,
+          p2 = 2.26744154e-06,
+          p3 = 6.52855181e-08;
+// T/K = 1/( p0 + p1*ln(R) + p2*ln(R)^2 + p3*ln(R)^3 )
+
+    // range/scale 0, 1, 2:                        // M10-pcb
+    float Rs[3] = { 12.1e3 ,  36.5e3 ,  475.0e3 }; // bias/series
+    float Rp[3] = { 1e20   , 330.0e3 , 3000.0e3 }; // parallel, Rp[0]=inf
+
+    uint8_t  scT;     // {0,1,2}, range/scale voltage divider
+    uint16_t ADC_RT;  // ADC12 P6.7(A7) , adr_0377h,adr_0376h
+    uint16_t Tcal[2]; // adr_1000h[scT*4]
+
+    float adc_max = 4095.0; // ADC12
+    float x, R;
+    float T = 0;    // T/Kelvin
+
+    struct M10 * anonym = &chan[m].m10;
+
+    scT     =  (unsigned char)anonym->rxbuf[0x3E]; // adr_0455h
+    ADC_RT  = ((unsigned char)anonym->rxbuf[0x40] << 8) | (unsigned char)anonym->rxbuf[0x3F];
+    ADC_RT -= 0xA000;
+    Tcal[0] = ((unsigned char)anonym->rxbuf[0x42] << 8) | (unsigned char)anonym->rxbuf[0x41];
+    Tcal[1] = ((unsigned char)anonym->rxbuf[0x44] << 8) | (unsigned char)anonym->rxbuf[0x43];
+
+    x = (adc_max-ADC_RT)/ADC_RT;  // (Vcc-Vout)/Vout
+    if (scT < 3) R =  Rs[scT] /( x - Rs[scT]/Rp[scT] );
+    else         R = -1;
+
+    if (R > 0)  T =  1/( p0 + p1*log(R) + p2*log(R)*log(R) + p3*log(R)*log(R)*log(R) );
+/*
+//    if (option_verbose >= 3 && csO) { // on-chip temperature
+        uint16_t ADC_Ti_raw = (anonym->rxbuf[0x49] << 8) | anonym->rxbuf[0x48]; // int.temp.diode, ref: 4095->1.5V
+        float vti, ti;
+        // INCH1A (temp.diode), slau144
+        vti = ADC_Ti_raw/4095.0 * 1.5; // V_REF+ = 1.5V, no calibration
+        ti = (vti-0.986)/0.00355;      // 0.986/0.00355=277.75, 1.5/4095/0.00355=0.1032
+        fprintf(stdout, "  (Ti:%.1fC)", ti);
+        // SegmentA-Calibration:
+        //ui16_t T30 = adr_10e2h; // CAL_ADC_15T30
+        //ui16_t T85 = adr_10e4h; // CAL_ADC_15T85
+        //float  tic = (ADC_Ti_raw-T30)*(85.0-30.0)/(T85-T30) + 30.0;
+        //fprintf(stdout, "  (Tic:%.1fC)", tic);
+//    }
+*/
+    return  T - 273.15; // Celsius
+}
+/*
+frame[0x32]: adr_1074h
+frame[0x33]: adr_1075h
+frame[0x34]: adr_1076h
+frame[0x35..0x37]: TBCCR1 ; relHumCap-freq
+frame[0x38]: adr_1078h
+frame[0x39]: adr_1079h
+frame[0x3A]: adr_1077h
+frame[0x3B]: adr_100Ch
+frame[0x3C..3D]: 0
+frame[0x3E]: scale_index ; scale/range-index
+frame[0x3F..40] = ADC12_A7 | 0xA000, V_R+=AVcc ; Thermistor
+frame[0x41]: adr_1000h[scale_index*4]
+frame[0x42]: adr_1000h[scale_index*4+1]
+frame[0x43]: adr_1000h[scale_index*4+2]
+frame[0x44]: adr_1000h[scale_index*4+3]
+frame[0x45..46]: ADC12_A5/4, V_R+=2.5V
+frame[0x47]: ADC12_A2/16 , V_R+=2.5V
+frame[0x48..49]: ADC12_iT, V_R+=1.5V (int.Temp.diode)
+frame[0x4C..4D]: ADC12_A6, V_R+=2.5V
+frame[0x4E..4F]: ADC12_A3, V_R+=AVcc
+frame[0x50..54]: 0;
+frame[0x55..56]: ADC12_A1, V_R+=AVcc
+frame[0x57..58]: ADC12_A0, V_R+=AVcc
+frame[0x59..5A]: ADC12_A4, V_R+=AVcc  // ntc2: R(25C)=2.2k, Rs=22.1e3 (relHumCap-Temp)
+frame[0x5B]:
+frame[0x5C]: adr_108Eh
+frame[0x5D]: adr_1082h (SN)
+frame[0x5E]: adr_1083h (SN)
+frame[0x5F]: adr_1084h (SN)
+frame[0x60]: adr_1080h (SN)
+frame[0x61]: adr_1081h (SN)
+*/
+float M10get_Tntc2(uint32_t m) {
+// SMD ntc
+    float Rs = 22.1e3;          // P5.6=Vcc
+//  float R25 = 2.2e3;
+//  float b = 3650.0;           // B/Kelvin
+//  float T25 = 25.0 + 273.15;  // T0=25C, R0=R25=5k
+// -> Steinhart–Hart coefficients (polyfit):
+    float p0 =  4.42606809e-03,
+          p1 = -6.58184309e-04,
+          p2 =  8.95735557e-05,
+          p3 = -2.84347503e-06;
+    float T = 0.0;              // T/Kelvin
+    uint16_t ADC_ntc2;            // ADC12 P6.4(A4)
+    float x, R;
+    struct M10 * anonym = &chan[m].m10;
+
+//    if (csOK)
+//    {
+        ADC_ntc2  = ((unsigned char)anonym->rxbuf[0x5A] << 8) | (unsigned char)anonym->rxbuf[0x59];
+        x = (4095.0 - ADC_ntc2)/ADC_ntc2;  // (Vcc-Vout)/Vout
+        R = Rs / x;
+        //if (R > 0)  T = 1/(1/T25 + 1/b * log(R/R25));
+        if (R > 0)  T =  1/( p0 + p1*log(R) + p2*log(R)*log(R) + p3*log(R)*log(R)*log(R) );
+//    }
+    return T - 273.15;
+}
+
+// Humidity Sensor
+// U.P.S.I.
+//
+#define FREQ_CAPCLK (8e6/2)      // 8 MHz XT2 crystal, InputDivider IDx=01 (/2)
+#define LN2         0.693147181
+#define ADR_108A    1000.0       // 0x3E8=1000
+
+float get_count_RH(uint32_t m) {  // capture 1000 rising edges
+    struct M10 * anonym = &chan[m].m10;
+    uint32_t TBCCR1_1000 = anonym->rxbuf[0x35] | (anonym->rxbuf[0x36]<<8) | (anonym->rxbuf[0x37]<<16);
+    return TBCCR1_1000 / ADR_108A;
+}
+float get_TLC555freq(uint32_t m) {
+    return FREQ_CAPCLK / get_count_RH(m);
+}
+
+
 static void decodeframe10(uint32_t m)
 {
    uint32_t week;
@@ -1622,10 +1777,13 @@ static void decodeframe10(uint32_t m)
    double alt;
    double lon;
    double lat;
+   float vbat;
+   float temp1,temp2;
    uint32_t time0;
    uint32_t id;
    char ids[201];
-   char s[201+6];
+   //char s[201+6];
+   char s[400];
    struct M10 * anonym;
    struct CHAN * anonym0; /* call if set */
    { /* with */
@@ -1633,6 +1791,7 @@ static void decodeframe10(uint32_t m)
       cs = (uint32_t)crcm10(99L, anonym->rxbuf, 101ul);
       if (cs==m10card(anonym->rxbuf, 101ul, 99L, 2L)) {
          /* crc ok */
+
          tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
          week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
          time0 = tow/1000UL+week*604800UL+315964800UL;
@@ -1641,11 +1800,13 @@ static void decodeframe10(uint32_t m)
             aprsstr_DateToStr(time0, s, 201ul);
             osi_WrStr(s, 201ul);
             osi_WrStr(" ", 2ul);
-         }
-         lat = (double)m10card(anonym->rxbuf, 101ul, 14L,
-                4L)*8.3819036711397E-8;
-         lon = (double)m10card(anonym->rxbuf, 101ul, 18L,
-                4L)*8.3819036711397E-8;
+         } 
+	 temp1=M10get_Temp(m);
+	 temp2=M10get_Tntc2(m);
+	 float fq555 = get_TLC555freq(m);
+	 vbat=(float)((256*(unsigned char)anonym->rxbuf[70]+(unsigned char)anonym->rxbuf[69])*0.00668);
+         lat = (double)m10card(anonym->rxbuf, 101ul, 14L,4L)*8.3819036711397E-8;
+         lon = (double)m10card(anonym->rxbuf, 101ul, 18L,4L)*8.3819036711397E-8;
          alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
          ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
          if (ci>32767L) ci -= 65536L;
@@ -1657,9 +1818,10 @@ static void decodeframe10(uint32_t m)
          if (ci>32767L) ci -= 65536L;
          vv = (double)ci*0.005;
          v = (double)osic_sqrt((float)(ve*ve+vn*vn));
-                /* hor speed */
+                // hor speed
          dir = atang2(vn, ve)*5.7295779513082E+1;
          if (dir<0.0) dir = 360.0+dir;
+
 
 
     int i,j,k,l;
@@ -1674,6 +1836,8 @@ static void decodeframe10(uint32_t m)
         sn_bytes[i] = byte;
     }
 
+    printf("%02x:%02x ",(unsigned char)anonym->rxbuf[70],(unsigned char)anonym->rxbuf[69]);
+
     byte = sn_bytes[2];
     sprintf(SN, "%1X%02u", (byte>>4)&0xF, byte&0xF);
     j=atoi(SN);
@@ -1682,8 +1846,8 @@ static void decodeframe10(uint32_t m)
     byte = sn_bytes[3] | (sn_bytes[4]<<8);
     sprintf(SN+3, "%1X%1u%04u", sn_bytes[0]&0xF, (byte>>13)&0x7, byte&0x1FFF);
     sprintf(ids,SN);
-
-	 ids[9U] = 0;
+    ids[9U] = 0;
+    
          /* get ID */
          if (verb) {
             WrChan((int32_t)m);
@@ -1702,36 +1866,33 @@ static void decodeframe10(uint32_t m)
             osi_WrStr("deg ", 5ul);
             osic_WrFixed((float)vv, 1L, 1UL);
             osi_WrStr("m/s ", 5ul);
+	    osic_WrFixed((float)vbat, 1L, 1UL);
+            osi_WrStr("V T1:", 6ul);
+	    osic_WrFixed((float)temp1, 1L, 1UL);
+            osi_WrStr("C T2:", 6ul);
+	    osic_WrFixed((float)temp2, 1L, 1UL);
+	    osi_WrStr("C ", 3ul);
          }
-         /* build tx frame */
-         for (i = 0UL; i<=9UL; i++) {
-            s[i+7UL] = ids[i];
-         } /* end for */
-         { /* with */
-            struct CHAN * anonym0 = &chan[m];
-            s[0U] = (char)(anonym0->mycallc/16777216UL);
-            s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
-            s[2U] = (char)(anonym0->mycallc/256UL&255UL);
-            s[3U] = (char)(anonym0->mycallc&255UL);
-            if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
-            else s[4U] = '\020';
-            s[5U] = 0;
-            s[6U] = 0;
-         }
-         for (i = 0UL; i<=100UL; i++) {
-            s[i+17UL] = anonym->rxbuf[i]; /* payload */
-         } /* end for */
-
-
-	s[118U] = chan[m].freq[0];
-	s[119U] = chan[m].freq[1];
-	s[120U] = chan[m].freq[2];
-	s[121U] = chan[m].freq[3];
-	s[122U] = chan[m].freq[4];
-	s[123U] = chan[m].freq[5];
-
-
-         alludp(chan[m].udptx, 117UL+7, s, 201ul);
+	struct CHAN * anonym0 = &chan[m];
+    	s[0U] = (char)(anonym0->mycallc/16777216UL);
+        s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
+        s[2U] = (char)(anonym0->mycallc/256UL&255UL);
+        s[3U] = (char)(anonym0->mycallc&255UL);
+        if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
+        else s[4U] = '\020';
+	s[5]=',';
+	for(i=0;i<6;i++)			//qrg
+	    s[i+6]=chan[m].freq[i];
+	s[12]=',';
+	for(i=0;i<9;i++)			//nazwa
+	    s[i+13]=ids[i];
+	s[22]=0;
+	if( lat>-90.0 && lat<90.0 && lon>=-180.0 && lon<=180.0 && alt>0.0 && alt<45000.0 && dir>=0 && dir<361 && v>=0 && v<600 && 
+		vv>-200 && vv<200 && vbat>0 && vbat<10 && temp1>-270.0 && temp1<100.0 && temp2>-270.0 && temp2<100.0){
+	    sprintf(s,"%s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",s,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
+//	    printf("\nM10T:%s",s);	
+	    alludp(chan[m].udptx, 105, s, 105);
+	}
       }
       else if (verb) {
          /*build tx frame */
@@ -2898,7 +3059,7 @@ static void FskPS(uint32_t m)
    float ff;
    int32_t lim;
    struct PILS * anonym;
-   { /* with */
+   { 
       struct PILS * anonym = &chan[m].pils;
       lim = (int32_t)anonym->demodbaud;
       for (;;) {
@@ -2912,7 +3073,8 @@ static void FskPS(uint32_t m)
          if (anonym->baudfine<131072L) break;
       }
    }
-} /* end Fsk() */
+} // end Fsk() 
+
 
 static void Fsk10(uint32_t m)
 {
@@ -2975,8 +3137,7 @@ static char hamcorr(char b[], uint32_t b_len, uint32_t d,
 } /* end hamcorr() */
 
 
-static char hamming(const char b[], uint32_t b_len,
-                uint32_t len, char db[], uint32_t db_len)
+static char hamming(const char b[], uint32_t b_len, uint32_t len, char db[], uint32_t db_len)
 {
    uint32_t j;
    uint32_t i;
@@ -3306,32 +3467,72 @@ float get_Temp2(float *meas) { // meas[0..4]
     R = (f-f1)/g;                    // meas[0,3,4] > 0 ?
     if (R > 0)  T = 1/(1/T0 + 1/BB0 * log(R/R0));
 
-//    if (option_ptu && option_verbose == 2) {
-        printf("  (Rso: %.1f , Rb: %.1f)", Rs_o/1e3, Rb/1e3);
-//    }
+    //printf("  (Rso: %.1f , Rb: %.1f)", Rs_o/1e3, Rb/1e3);
 
     return  T - 273.15;
 //  DFM-06: meas20 * 16 = meas24
 }
 
+float get_Temp4(float *meas) { // meas[0..4]
+// NTC-Thermistor EPCOS B57540G0502
+// [  T/C  ,   R/R25   , alpha ] :
+// [ -55.0 ,  51.991   ,   6.4 ]
+// [ -50.0 ,  37.989   ,   6.2 ]
+// [ -45.0 ,  28.07    ,   5.9 ]
+// [ -40.0 ,  20.96    ,   5.7 ]
+// [ -35.0 ,  15.809   ,   5.5 ]
+// [ -30.0 ,  12.037   ,   5.4 ]
+// [ -25.0 ,   9.2484  ,   5.2 ]
+// [ -20.0 ,   7.1668  ,   5.0 ]
+// [ -15.0 ,   5.5993  ,   4.9 ]
+// [ -10.0 ,   4.4087  ,   4.7 ]
+// [  -5.0 ,   3.4971  ,   4.6 ]
+// [   0.0 ,   2.7936  ,   4.4 ]
+// [   5.0 ,   2.2468  ,   4.3 ]
+// [  10.0 ,   1.8187  ,   4.2 ]
+// [  15.0 ,   1.4813  ,   4.0 ]
+// [  20.0 ,   1.2136  ,   3.9 ]
+// [  25.0 ,   1.0000  ,   3.8 ]
+// [  30.0 ,   0.82845 ,   3.7 ]
+// [  35.0 ,   0.68991 ,   3.6 ]
+// [  40.0 ,   0.57742 ,   3.5 ]
+// -> Steinhart–Hart coefficients (polyfit):
+    float p0 = 1.09698417e-03,
+          p1 = 2.39564629e-04,
+          p2 = 2.48821437e-06,
+          p3 = 5.84354921e-08;
+// T/K = 1/( p0 + p1*ln(R) + p2*ln(R)^2 + p3*ln(R)^3 )
+    float Rf = 220e3;    // Rf = 220k
+    float g = meas[4]/Rf;
+    float R = (meas[0]-meas[3]) / g; // meas[0,3,4] > 0 ?
+    float T = 0; // T/Kelvin
+    if (R > 0)  T = 1/( p0 + p1*log(R) + p2*log(R)*log(R) + p3*log(R)*log(R)*log(R) );
+    return  T - 273.15; // Celsius
+//  DFM-06: meas20 * 16 = meas24
+//      -> (meas24[0]-meas24[3])/meas24[4]=(meas20[0]-meas20[3])/meas20[4]
+}
 
-#define SNbit 0x0100
+
+#define RSNbit 0x0100  // radiosonde DFM-06,DFM-09
+#define PSNbit 0x0200  // pilotsonde PS-15
+
 int conf_out(uint8_t *conf_bits,uint32_t m) {
     int conf_id;
     int ret = 0;
     int val, hl;
     static int chAbit, chA[2];
-    uint32_t SN6, SN9;
+    uint32_t SN6, SN9, SN15;
+    static int ch7bit, ch7[2];
 
     conf_id = bits2val(conf_bits, 4);
 
-    //if (conf_id > 6) chan[m].dfm6.SN6 = 0;  //// gpx.sonde_typ & 0xF = 9; // SNbit?
 
     if ((chan[m].dfm6.sonde_typ & 0xFF) < 9  &&  conf_id == 6) {
         SN6 = bits2val(conf_bits+4, 4*6);  // DFM-06: Kanal 6
-        if ( SN6 == chan[m].dfm6.SN6 ) {            // nur Nibble-Werte 0..9
-            chan[m].dfm6.sonde_typ = SNbit | 6;
+        if ( SN6 == chan[m].dfm6.SN6 &&  SN6 != 0) {            // nur Nibble-Werte 0..9
+            chan[m].dfm6.sonde_typ = RSNbit | 6;
             ret = 6;
+	    printf("DFM6\n");
         }
         else {
             chan[m].dfm6.sonde_typ = 0;
@@ -3346,8 +3547,9 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
         if (chAbit == 3) {  // DFM-09: Kanal A
             SN9 = (chA[1] << 16) | chA[0];
             if ( SN9 == chan[m].dfm6.SN9 ) {
-                chan[m].dfm6.sonde_typ = SNbit | 9;
+                chan[m].dfm6.sonde_typ = RSNbit | 9;
                 ret = 9;
+		printf("DFM9\n");
             }
             else {
                 chan[m].dfm6.sonde_typ = 0;
@@ -3357,6 +3559,24 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
         }
     }
 
+    if (conf_id == 0x7) {  // 0x70xxxxy
+        val = bits2val(conf_bits+8, 4*5);
+        hl =  (val & 1) == 0;
+        ch7[hl] = (val >> 4) & 0xFFFF;
+        ch7bit |= 1 << hl;
+        if (ch7bit == 3) {  // PS-15: Kanal 7
+            SN15 = (ch7[1] << 16) | ch7[0];
+            if ( SN15 == chan[m].dfm6.SN15 ) {
+                chan[m].dfm6.sonde_typ = PSNbit | 15;
+                ret = 15;
+            }
+            else {
+                chan[m].dfm6.sonde_typ = 0;
+            }
+            chan[m].dfm6.SN15 = SN15;
+            ch7bit = 0;
+        }
+    }
     if (conf_id >= 0 && conf_id <= 4) {
         val = bits2val(conf_bits+4, 4*6);
         chan[m].dfm6.meas24[conf_id] = fl24(val);
@@ -3387,7 +3607,7 @@ void print_gpx(uint32_t m) {
   int i, j;
     char typp;
 
-          if (chan[m].dfm6.sonde_typ & SNbit)
+          if (chan[m].dfm6.sonde_typ & RSNbit)
           {
               if ((chan[m].dfm6.sonde_typ & 0xFF) == 6) {
 		  sprintf(chan[m].dfm6.id,"D6%06X", chan[m].dfm6.SN6);
@@ -3397,13 +3617,20 @@ void print_gpx(uint32_t m) {
 		  sprintf(chan[m].dfm6.id,"D9%06u", chan[m].dfm6.SN9);
 		    typp='9';
               }
-              chan[m].dfm6.sonde_typ ^= SNbit;
+              chan[m].dfm6.sonde_typ ^= RSNbit;
           }
-
-	  if((chan[m].dfm6.id[0]!='D')||(chan[m].dfm6.id[1]!='6')&&(chan[m].dfm6.id[1]!='9'))
+	  if (chan[m].dfm6.sonde_typ & PSNbit) {
+                  if ((chan[m].dfm6.sonde_typ & 0xFF) == 15) {
+		      sprintf(chan[m].dfm6.id,"DF%06u", chan[m].dfm6.SN15);
+		      typp='F';
+                  }
+                  chan[m].dfm6.sonde_typ ^= PSNbit;
+          }
+	
+	  if((chan[m].dfm6.id[0]!='D')||(chan[m].dfm6.id[1]!='6')&&(chan[m].dfm6.id[1]!='9')&&(chan[m].dfm6.id[1]!='F'))
 	    chan[m].dfm6.id[0]=0;
 	
-          printf("%d:DFM %s ",m+1,chan[m].dfm6.id+2);
+          printf("%d:DFM %s ",m+1,chan[m].dfm6.id+2); 
           printf("[%3d] ", chan[m].dfm6.frnr);
           printf("lat: %.6f ", chan[m].dfm6.lat);
           printf("lon: %.6f ", chan[m].dfm6.lon);
@@ -3412,7 +3639,9 @@ void print_gpx(uint32_t m) {
           printf("D: %5.1f ", chan[m].dfm6.dir);
           printf("vV: %5.2f ", chan[m].dfm6.vertV);
           float t = get_Temp(chan[m].dfm6.meas24);
+	  float t4 = get_Temp4(chan[m].dfm6.meas24);
           if (t > -270.0) printf("T=%.1fC ", t);
+          if (t4 > -270.0) printf("T4=%.1fC ", t4);
           if ((chan[m].dfm6.sonde_typ & 0xFF) == 9) {
               printf("U: %.2fV ", chan[m].dfm6.status[0]);
               printf("Ti: %.2fC ", chan[m].dfm6.status[1]-270.0);
@@ -3495,7 +3724,6 @@ static char sendDFM(uint32_t m){
 	
         tmp[16]=0;
         strcat(s,tmp);
-	//dopisanie znaku TODO
 
         tmp[0] = (char)(chan[m].mycallc/16777216UL);
         tmp[1] = (char)(chan[m].mycallc/65536UL&255UL);
