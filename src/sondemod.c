@@ -460,6 +460,7 @@ int save_csv()
 
     maxmax=max;
     max=0;
+    maxpos=-1;
 
     for(j=0;j<29;j++){
       for(i=0;i<30;i++){
@@ -468,7 +469,7 @@ int save_csv()
 	    maxpos=i;
         }
       }
-        if(dBs[maxpos].name[i]!=0){
+        if(dBs[maxpos].name[i]!=0 && maxpos>-1){
     	    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[maxpos].name,dBs[maxpos].lat,dBs[maxpos].lon,dBs[maxpos].alt,dBs[maxpos].speed,dBs[maxpos].climb,dBs[maxpos].dir,dBs[maxpos].frq,dBs[maxpos].time);
     	    fputs(str,stream);
         }
