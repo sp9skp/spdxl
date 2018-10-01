@@ -460,9 +460,10 @@ int save_csv()
 
     maxmax=max;
     max=0;
-    maxpos=-1;
+
 
     for(j=0;j<29;j++){
+      maxpos=-1;
       for(i=0;i<30;i++){
 	if(max<dBs[i].time && dBs[i].time<maxmax){
 	    max=dBs[i].time;

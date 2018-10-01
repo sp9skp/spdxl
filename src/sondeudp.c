@@ -3532,7 +3532,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
         if ( SN6 == chan[m].dfm6.SN6 &&  SN6 != 0) {            // nur Nibble-Werte 0..9
             chan[m].dfm6.sonde_typ = RSNbit | 6;
             ret = 6;
-	    printf("DFM6\n");
+//	    printf("DFM6\n");
         }
         else {
             chan[m].dfm6.sonde_typ = 0;
@@ -3549,7 +3549,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
             if ( SN9 == chan[m].dfm6.SN9 ) {
                 chan[m].dfm6.sonde_typ = RSNbit | 9;
                 ret = 9;
-		printf("DFM9\n");
+//		printf("DFM9\n");
             }
             else {
                 chan[m].dfm6.sonde_typ = 0;
@@ -3630,7 +3630,7 @@ void print_gpx(uint32_t m) {
 	  if((chan[m].dfm6.id[0]!='D')||(chan[m].dfm6.id[1]!='6')&&(chan[m].dfm6.id[1]!='9')&&(chan[m].dfm6.id[1]!='F'))
 	    chan[m].dfm6.id[0]=0;
 	
-          printf("%d:DFM %s ",m+1,chan[m].dfm6.id+2); 
+          printf("%02d:DFM %s ",m+1,chan[m].dfm6.id+2); 
           printf("[%3d] ", chan[m].dfm6.frnr);
           printf("lat: %.6f ", chan[m].dfm6.lat);
           printf("lon: %.6f ", chan[m].dfm6.lon);
