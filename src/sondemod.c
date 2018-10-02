@@ -3283,6 +3283,8 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
     uint32_t time0;
 
 
+
+
     int cnt=0;
     for (i=0; i<105; i++)
         if(rxb[i] == ',') cnt++;
@@ -3306,7 +3308,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
       }
       osi_WrStrLn("", 1ul);
    }
-   if (sondeaprs_verb) osi_WrStr("M10 ", 5ul);
+
 
         tmp = strtok(NULL, ",");        //frq
          if(isNDig(tmp)) return(0);
@@ -3358,35 +3360,11 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
         temp2=atof(tmp);
 
         tmp = strtok(NULL, ",");        //fq555
+	tmp[6]=0;
+
          if(isNDig(tmp)) return(0);
         fq555=atof(tmp);
 
-      if (sondeaprs_verb) {
-         osi_WrStr(nam, 10ul);
-         osi_WrStr(" ", 2ul);
-         osic_WrINT32(frameno, 1UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)lat, 5L, 1UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)lon, 5L, 1UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)alt, 1L, 1UL);
-         osi_WrStr("m ", 3ul);
-         osic_WrFixed((float)(v*3.6), 1L, 1UL);
-         osi_WrStr("km/h ", 6ul);
-         osic_WrFixed((float)dir, 0L, 1UL);
-         osi_WrStr("deg ", 5ul);
-         osic_WrFixed((float)vv, 1L, 1UL);
-         osi_WrStr("m/s ", 5ul);
-         osic_WrFixed((float)vbat, 1L, 1UL);
-         osi_WrStr("V ", 3ul);
-         osic_WrFixed((float)temp1, 1L, 1UL);
-         osi_WrStr("C ", 3ul);
-         osic_WrFixed((float)temp2, 1L, 1UL);
-         osi_WrStr("C ", 3ul);
-
-
-      }
 
       pc = pcontextm10;
       pc0 = 0;
@@ -3417,7 +3395,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
 
       frameno = time0;
       pc->gpssecond = time0+86382UL;
-      if (frameno>pc->framenum) {
+      if (frameno > pc->framenum) {
          pc->framesent = 0;
          calok = 1;
          pc->framenum = frameno;
@@ -3435,10 +3413,10 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
       }
 
 
-   if (pc && lat>0 && lat<90 && lon>0 && lat<45000 ) {
+   if (pc && lat>0 && lat<90 && lon>0 && alt<45000 ) {
 
-    
-     //printf("M10: (%s) %s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",usercall,nam,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
+      if (sondeaprs_verb) 
+	printf("M10: (%s) %s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",usercall,nam,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
       sondeaprs_senddata(lat*1.7453292519943E-2, lon* 1.7453292519943E-2, alt, v, dir, vv, 0.0, 0.0,
                 (double)X2C_max_real, 0.0, 0.0, 0.0, 0.0, frq, 0.0, 0.0,
                 pc->gpssecond, pc->framenum, pc->name, 9ul, 0UL, 0, usercall,
@@ -3534,12 +3512,10 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
    int32_t timegp;
    int32_t dategp,gpstime;
    
-//   nam[0U] = 0;
    pc = 0;
    lat = 0.0;
    long0 = 0.0;
     unsigned char  bytes[4];
-//    int val;
 
     getcall(rxb, rxb_len, usercall, 11ul);  //decode callsign from table
     
@@ -3552,10 +3528,8 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
 //    if (pilname[0UL]=0UL){
     //assign name to object (no number coded in sonde) - pilotson
 
-
 //    if(gpstime-pc->lastframe>300 || pc->name[0]==0){	
 //        czas=dzienRoku((1900+tm.tm_year),tm.tm_mon+1,tm.tm_mday);
-
 
 //    }     
 //    else strcpy(nam,pc->
@@ -3570,35 +3544,24 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     tmps[7]=0;
     frq=atof(tmps);
 
-//    printf("\n%f\n",frq);
-
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     int czas=tm.tm_mon + 1 + tm.tm_mday;
 
-	nam[0]='P'; 
-	nam[1]=65+tm.tm_hour; 
-	nam[2]=65+(int)(czas/25);
-	nam[3]=65+czas%25;
-	nam[4]=rxb[57]; 
-        nam[5]='4';//rxb[58]; 
-	nam[6]='7';//rxb[59]; 
-	nam[7]='0';//rxb[60]; 
-	nam[8]=0;
-
-
+    nam[0]='P'; 
+    nam[1]=65+tm.tm_hour; 
+    nam[2]=65+(int)(czas/25);
+    nam[3]=65+czas%25;
+    nam[4]=rxb[57]; 
+    nam[5]='4';//rxb[58]; 
+    nam[6]='7';//rxb[59]; 
+    nam[7]='0';//rxb[60]; 
+    nam[8]=0;
 
     gpstime=(int32_t)(86382UL+tm.tm_sec+tm.tm_min*60+tm.tm_hour*3600);
 
     char str[15];
 
-
-/*    for (i=0UL; i<8UL; i++){
-	nam[i]=tmp_name[i];
-    }	
-    nam[8U] = 0UL;
-*/
-      
     if (sondeaprs_verb && fromport>0UL) {
         osi_WrStr("UDP:", 5ul);
         aprsstr_ipv4tostr(ip, s, 1001ul);
