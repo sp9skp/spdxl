@@ -3283,18 +3283,10 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
     uint32_t time0;
 
 
-/*
-    for (i=0; i<105; i++)
-	printf("%c",rxb[i]);
-    printf("\n");
-*/
-
-
     int cnt=0;
     for (i=0; i<105; i++)
         if(rxb[i] == ',') cnt++;
     if(cnt!=13) return;
-//    printf("\n***************************\n");
 
     char *tmp = strtok(rxb, ",");
 
@@ -3445,7 +3437,8 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
 
    if (pc && lat>0 && lat<90 && lon>0 && lat<45000 ) {
 
-      //printf("M10: (%s) %s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",usercall,nam,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
+    
+     //printf("M10: (%s) %s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",usercall,nam,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
       sondeaprs_senddata(lat*1.7453292519943E-2, lon* 1.7453292519943E-2, alt, v, dir, vv, 0.0, 0.0,
                 (double)X2C_max_real, 0.0, 0.0, 0.0, 0.0, frq, 0.0, 0.0,
                 pc->gpssecond, pc->framenum, pc->name, 9ul, 0UL, 0, usercall,

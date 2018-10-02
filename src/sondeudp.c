@@ -1836,8 +1836,6 @@ static void decodeframe10(uint32_t m)
         sn_bytes[i] = byte;
     }
 
-//    printf("%02x:%02x ",(unsigned char)anonym->rxbuf[70],(unsigned char)anonym->rxbuf[69]);
-
     byte = sn_bytes[2];
     sprintf(SN, "%1X%02u", (byte>>4)&0xF, byte&0xF);
     j=atoi(SN);
@@ -1890,7 +1888,7 @@ static void decodeframe10(uint32_t m)
 	if( lat>-90.0 && lat<90.0 && lon>=-180.0 && lon<=180.0 && alt>0.0 && alt<45000.0 && dir>=0 && dir<361 && v>=0 && v<600 && 
 		vv>-200 && vv<200 && vbat>0 && vbat<10 && temp1>-270.0 && temp1<100.0 && temp2>-270.0 && temp2<100.0){
 	    sprintf(s,"%s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",s,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
-	    printf("\nM10T:%s",s);	
+//	    printf("\nM10T:%s",s);	
 	    alludp(chan[m].udptx, 105, s, 105);
 	}
       }
