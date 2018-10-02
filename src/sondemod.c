@@ -3283,10 +3283,18 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
     uint32_t time0;
 
 
+/*
+    for (i=0; i<105; i++)
+	printf("%c",rxb[i]);
+    printf("\n");
+*/
+
+
     int cnt=0;
     for (i=0; i<105; i++)
-        cnt += (rxb[i] == ',');
+        if(rxb[i] == ',') cnt++;
     if(cnt!=13) return;
+//    printf("\n***************************\n");
 
     char *tmp = strtok(rxb, ",");
 
