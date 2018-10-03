@@ -607,7 +607,6 @@ static void updateChanT(){
 	    l=strlen(sndbufft);
 	    sndbufft[l]=0;
 	    sndbufft[l+1]=0;
-	    printf(sndbufft);
     	    osi_WrBin(fd, (char *)sndbufft, 1024, 1024);
 	    j=0;
 	}

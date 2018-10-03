@@ -4464,7 +4464,7 @@ static void getadc(void)
 	 
 
 	 if(tmps[0]=='9' && tmps[1]=='S' && tmps[2]=='K' && tmps[3]=='P'){ //freq table
-	    printf("Update channel table\n");
+	    //printf("Update channel table\n");
 	    pos=4;
 	    mod=1;
             chno=0;
@@ -4480,8 +4480,8 @@ static void getadc(void)
 		chan[chno].freq[5]=adcbuf[pos+7];
 		chan[chno].freq[6]=0;
 		pos+=8;
-		printf("CH:%i QRG:",chno);
-		printf(chan[chno].freq);printf("\n");
+		//printf("CH:%i QRG:",chno);
+		//printf(chan[chno].freq);printf("\n");
 	    }
 	 }else if(mod==0){
              adcbufsamps = 0UL;
