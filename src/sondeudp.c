@@ -393,6 +393,7 @@ struct CHAN {
 
    char nr;
    char freq[10];
+   char pfreq[10];
 
 };
 
@@ -3769,6 +3770,18 @@ static void decodeframe6(uint32_t m)
 	anonym->lastsent=osic_time();
 	chan[m].dfm6.id[0]=0;
       }
+
+      if(chan[m].dfm6.newsonde==0){
+	for(i=0;i<6;i++)
+	    if(chan[m].freq[0]!=chan[m].pfreq[0])
+		chan[m].dfm6.newsonde=1;
+      }
+
+      if(chan[m].dfm6.newsonde){
+	for(i=0;i<6;i++)
+	    chan[m].pfreq[0]=chan[m].freq[0];
+      }
+
       if(ret2>0)
           conf_out(anonym->cb,m);
       if(ret0>0){
