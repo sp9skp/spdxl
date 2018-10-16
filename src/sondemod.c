@@ -8,6 +8,9 @@
  */
 
 
+#define DBS_SIZE 100
+
+
 #define BUFLEN 256
 #define PORT 9930
 
@@ -321,7 +324,7 @@ struct DBS{
     char aux;
     double press;
     float vbat,t1,t2,hum;
-} dBs[30];
+} dBs[DBS_SIZE];
 
 static FILENAME semfile;
 
@@ -429,65 +432,23 @@ const char* getfield(char* line, int num)
     return NULL;
 }
 
-int save_csv()
-{
 
 
+
+
+int save_csv() {
     FILE* stream;
-    char tab[30][200],str[200];
-    char line[200];
-    int cnt=0,rep=0,i,j ;
-    uint32_t time_last=0;
-    double dlat,dlon;
-
-    stream = fopen("/tmp/sonde.csv", "w");
-
-    //najnowszy wpis
-    unsigned long max=0,maxmax=0;
-    int maxpos=0;
-
-    for(i=0;i<30;i++){
-	if(max<dBs[i].time){
-	    max=dBs[i].time;
-	    maxpos=i;
-	}
+    stream = fopen("/tmp/sonde.csv", "w+");
+    if (stream){
+	for (i=0;i<DBS_SIZE;i++) if (dBs[i].name[0]) fprintf(stream,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[i].name,dBs[i].lat,dBs[i].lon,dBs[i].alt,dBs[i].speed,dBs[i].climb,dBs[i].dir,dBs[i].frq,dBs[i].time);
+	fclose(stream);
     }
-
-    if(dBs[maxpos].name[0]!=0){
-        sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[maxpos].name,dBs[maxpos].lat,dBs[maxpos].lon,dBs[maxpos].alt,dBs[maxpos].speed,dBs[maxpos].climb,dBs[maxpos].dir,dBs[maxpos].frq,dBs[maxpos].time);
-        fputs(str,stream);
-    }
-
-    maxmax=max;
-    max=0;
-
-
-    for(j=0;j<29;j++){
-      maxpos=-1;
-      for(i=0;i<30;i++){
-	if(max<dBs[i].time && dBs[i].time<maxmax){
-	    max=dBs[i].time;
-	    maxpos=i;
-        }
-      }
-        if(dBs[maxpos].name[i]!=0 && maxpos>-1){
-    	    sprintf(str,"%s;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.0f;%0.3f;%lu\n",dBs[maxpos].name,dBs[maxpos].lat,dBs[maxpos].lon,dBs[maxpos].alt,dBs[maxpos].speed,dBs[maxpos].climb,dBs[maxpos].dir,dBs[maxpos].frq,dBs[maxpos].time);
-    	    fputs(str,stream);
-        }
-        maxmax=max;
-        max=0;
-    }
-    if(stream) fclose(stream);
-
 }
 
 
 int read_csv()
 {
-
-
     FILE* stream;
-    char tab[30][200],str[200];
     char line[200];
     int cnt=0,rep=0,i,j ;
     uint32_t time_last=0;
@@ -499,9 +460,9 @@ int read_csv()
 
     if(stream){
         cnt=0;
-        while (fgets(line, 200, stream) && cnt<30 )
+        while (fgets(line, 200, stream) && cnt<DBS_SIZE )
         {
-	    
+	    line[sizeof(line)-1]=0;
             char* tmp = strdup(line);
             txt=strtok(tmp,";");
             i=0;
@@ -648,44 +609,18 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
 //    printf("***** %s\n",name);
     int i,newS=1;
     time_t minTime=time(NULL),difftime;
-    int oldestPos=0,soNum=-1;
-    FILE * band_lock;
-
-    if (alt<2000){
-	band_lock=fopen("/tmp/band_lock","w+");
-	if (band_lock){
-    	    fprintf(band_lock,"%s alt: %f",name, alt);
-    	    fclose(band_lock);
-	}
-    }
-
+    
     if(t1<-250 || t1>80) t1=0;
     if(t2<-250 || t2>80) t2=0;
     if(hum<0 || hum>100) hum=0;
     if(vbat<1 || vbat>40) vbat=0;
 
-    i=0;
-    while(dBs[i].name[0]!=0 && i<30 && soNum<0){
-
-	if (minTime>dBs[i].time){	
-	    minTime=dBs[i].time;
-	    oldestPos=i;
-	}
-
-	if(strcmp(dBs[i].name,name)==0){
-	    soNum=i;				
-	    newS=0;				
-	}
-	else
-	    i++;				
+    for (i=0;i<DBS_SIZE;i++){
+	if (!strncmp(dBs[i].name,name,19)) break;
+	if (!dBs[i].name[0]) break;
     }
-
-    if(i==30){					
-	i=oldestPos;
-    }
-    if(soNum>-1){				
-	i=soNum;				
-	difftime=time(NULL)-dBs[i].sendtime;	
+    if (i==DBS_SIZE){ 
+	for (i=0;i<(DBS_SIZE-1);i++) memcpy(&dBs[i],&dBs[i+1],sizeof(struct DBS));
     }
 
     strcpy(dBs[i].name,name);
@@ -720,6 +655,23 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
  
 
 //-SKP
+
+//SQ6QV
+int store_sonde_rs(char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum, char * src_call){
+
+FILE * band_lock;
+
+    if (alt<2000){
+	band_lock=fopen("/tmp/band_lock","w+");
+	if (band_lock){
+    	    fprintf(band_lock,"%s alt: %f",name, alt);
+    	    fclose(band_lock);
+	}
+    }
+
+//#include "sondemod_qv.c"
+
+}
 
 
 static void Error(char text[], uint32_t text_len)
@@ -1981,6 +1933,7 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
          anonym1->framesent = 1;
     //SKP
         store_sonde_db( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz,0,anonym1->temp,0,anonym1->hyg);
+        store_sonde_rs( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz,0,anonym1->temp,0,anonym1->hyg,usercall);
  
       }
       crdone = 1;
@@ -2498,6 +2451,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
             anonym2->lastsent = systime;
 	    //SKP
             store_sonde_db(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0);
+            store_sonde_rs(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0,usercall);
          }
       }
    }
@@ -2672,6 +2626,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
 
             anonym->lastsent = osic_time();
             store_sonde_db(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0); 
+            store_sonde_rs(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0,usercall); 
         }
     }
     
@@ -3229,8 +3184,12 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
       pc->framesent = 1;
       //SKP
       store_sonde_db( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
-
    }
+   
+     
+     if (((pc && nameok) && lat!=0.0) && long0!=0.0) {
+        store_sonde_rs( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0,usercall);
+     }
 /*  IF verb THEN WrStrLn("") END;   */
 } /* end decoders41() */
 
@@ -3423,6 +3382,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
                 11ul, 0UL, 0UL,0, sondeaprs_nofilter,"M10",4,0);
 
       store_sonde_db( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq,vbat,temp1,temp2,fq555);
+      store_sonde_rs( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq,vbat,temp1,temp2,fq555,usercall);
       pc->framesent = 1;
 
     }
@@ -3694,6 +3654,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
                 11ul, 0UL, 0UL,0, sondeaprs_nofilter,"PilS",5,0);
       
       store_sonde_db( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
+      store_sonde_rs( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0,usercall);
       
       pc->framesent = 1;
    }
@@ -3715,37 +3676,19 @@ static void udprx(void)
    uint32_t fromport;
    uint32_t ip;
    int32_t len;
-   len = udpreceive(rxsock, chan[sondemod_LEFT].rxbuf, 520L, &fromport, &ip);
+   len = udpreceiveblock(rxsock, chan[sondemod_LEFT].rxbuf, 520L, &fromport, &ip);
    systime = osic_time();
-   if (len==240L) {
-      /*
-          IF verb & ((ip<>lastip) OR (fromport<>lastport)) THEN
-            ipv4tostr(ip, s);
-            WrStr(s); WrStr(":"); WrInt(fromport, 1); WrStrLn("");
-            lastip:=ip;
-            lastport:=fromport; 
-          END; 
-      */
-      decodeframe(sondemod_LEFT, ip, fromport);
+  
+  if (len>0) switch (len){ 
+      case 240: decodeframe(sondemod_LEFT, ip, fromport); break;
+      case 28:  decodec34(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
+      case 93:  decodedfm6(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
+      case 520: decoders41(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
+      case 105: decodem10(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
+      case 61:  decodepils(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
+      default: fprintf(stderr,"unsupported frame len %d\n", len);
    }
-   else if (len==22L+6L) {
-      decodec34(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
-   }
-   else if (len==88L+5) {
-      decodedfm6(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
-   }
-   else if (len==520L) {
-      decoders41(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
-   }
-   else if (len==105) {
-      decodem10(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
-   }
-   else if (len==55L+6L) {
-      decodepils(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);   // <-ADDED FOR PilotSonde
-   }
-
-   else usleep(10000UL);
-} /* end udprx() */
+} 
 
 
 X2C_STACK_LIMIT(100000l)
@@ -3755,8 +3698,8 @@ extern int main(int argc, char **argv)
    
    if(disSKP==0){
 	if(h2ip("skp.wodzislaw.pl",ip)){
-	    printf("\r\nCan't resolve DNS address using 194.140.233.120\r\n");
-	    sprintf(ip,"/194.140.233.120");
+	    fprintf(stderr,"\r\nCan't resolve DNS address using 194.140.233.120\r\n");
+	    sprintf(ip,"194.140.233.120");
 	    //return 0;
 	}
    }
@@ -3775,8 +3718,7 @@ extern int main(int argc, char **argv)
 
 
 
-   for(i=0;i<30;i++)
-    dBs[i].name[0]=0;
+   for(i=0;i<DBS_SIZE;i++) memset(&dBs[i],0,sizeof(struct DBS));
 
    read_csv();
 
