@@ -104,7 +104,7 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_FASTALM 4
 /* reread almanach if old */
 
-uint32_t save2csv, disSKP=0;
+uint32_t save2csv, disSKP=0,saveLog=0;
 
 typedef char FILENAME[1024];
 
@@ -606,9 +606,18 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 
 int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
 
-//    printf("***** %s\n",name);
+
     int i,newS=1;
     time_t minTime=time(NULL),difftime;
+    struct tm* tm_info;
+    tm_info = localtime(&minTime);
+
+    char s[30],s1[20],sf[50];
+    strftime(s, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    strftime(s1, 26, "%Y-%m-%d", tm_info);
+    sprintf(sf,"/tmp/log_%s.csv",s1);
+    FILE* fi;
+
     
     if(t1<-250 || t1>80) t1=0;
     if(t2<-250 || t2>80) t2=0;
@@ -651,6 +660,18 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
 	}
     }
     if(save2csv) save_csv();
+
+//char *name,frameno,   lat,     lon,  alt,speed,   dir,clmb,typ, ozon,aux,press,       frq,vbat, float t1, float t2, float hum
+//    M4353239;01151;49.44570;17.14525;1704 ; 9.14;162.18;5.28;9  ,0.000;0  ;  0.0;         0;0.0 ;0.0;0.0;0.0
+//    M4353239;02920;49.38820;17.25604;10342;22.68;158.89;5.77;9  ,0.000;0  ;244.3;2684354560;0.0 ;26815615859
+    if(saveLog){
+        fi = fopen(sf, "a+");
+	if (fi){
+    	    fprintf(fi,"%s;%s;%05u;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.2f;%i,%0.3f;%i;%0.1f;%0.3f;%02.1f;%03.1f;%03.1f;%03.1f;\n",
+		s,name,frameno,X2C_DIVL(lat,1.7453292519943E-2),X2C_DIVL(lon,1.7453292519943E-2),alt,speed,dir,climb, typ,ozon,aux,press,frq,vbat,t1,t2,hum);
+        }
+	fclose(fi);
+    }
 }
  
 
@@ -749,6 +770,7 @@ static void Parms(void)
    sondeaprs_verb = 0;
    sondeaprs_verb2 = 0;
    save2csv = 0;
+   saveLog=0;
    sendquick = 1UL;
    for (;;) {
       osi_NextArg(h, 1024ul);
@@ -851,6 +873,9 @@ static void Parms(void)
          else if (h[1U]=='e') {
             save2csv=1;
          }
+         else if (h[1U]=='l') {
+            saveLog=1;
+         }
          else if (h[1U]=='D') {
             disSKP=1;
          }
@@ -886,6 +911,7 @@ static void Parms(void)
                osi_WrStrLn(" -y <filename>  gps almanach yuma format (DO NOT USE, not exact)", 65ul);
 	       osi_WrStrLn(" -K <password>  password for SP9SKP database", 45ul);
 	       osi_WrStrLn(" -e             write last 30 radiosondes data to /tmp/sonde.csv", 66ul);
+	       osi_WrStrLn(" -l             write all received frames to /tmp/log.csv", 58ul);
 	       osi_WrStrLn(" -D             Disable sending to SKP database", 47ul);	
                osi_WrStrLn("example: sondemod -o 18000 -x almanach.txt -d -A 1500 -B 10 -I OE0AAA -r 127.0.0.1:9001", 88ul);
                X2C_ABORT();
