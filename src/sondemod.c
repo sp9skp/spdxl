@@ -608,9 +608,10 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
 
 
     int i,newS=1;
-    time_t minTime=time(NULL),difftime;
+    time_t minTime=time(NULL),difftime,lTime=time(NULL);
     struct tm* tm_info;
-    tm_info = localtime(&minTime);
+
+    tm_info = localtime(&lTime);
 
     char s[30],s1[20],sf[50];
     strftime(s, 26, "%Y-%m-%d %H:%M:%S", tm_info);
