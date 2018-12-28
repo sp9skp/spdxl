@@ -597,6 +597,9 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 
         if (sendto(sockfd, UDPbuf, BUFLEN, 0, (struct sockaddr*)&serv_addr, slen)==-1)
             printf("err: sendto()");
+	else
+	    printf("send to DB\n");
+
 
     }
 }
@@ -610,7 +613,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     int i,newS=1;
     time_t minTime=time(NULL),difftime,lTime=time(NULL);
     struct tm* tm_info;
-
+/*
     tm_info = localtime(&lTime);
 
     char s[30],s1[20],sf[50];
@@ -618,7 +621,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     strftime(s1, 26, "%Y-%m-%d", tm_info);
     sprintf(sf,"/tmp/log_%s.csv",s1);
     FILE* fi;
-
+*/
     
     if(t1<-250 || t1>80) t1=0;
     if(t2<-250 || t2>80) t2=0;
@@ -665,6 +668,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
 //char *name,frameno,   lat,     lon,  alt,speed,   dir,clmb,typ, ozon,aux,press,       frq,vbat, float t1, float t2, float hum
 //    M4353239;01151;49.44570;17.14525;1704 ; 9.14;162.18;5.28;9  ,0.000;0  ;  0.0;         0;0.0 ;0.0;0.0;0.0
 //    M4353239;02920;49.38820;17.25604;10342;22.68;158.89;5.77;9  ,0.000;0  ;244.3;2684354560;0.0 ;26815615859
+/*
     if(saveLog){
         fi = fopen(sf, "a+");
 	if (fi){
@@ -673,6 +677,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
         }
 	fclose(fi);
     }
+*/
 }
  
 
