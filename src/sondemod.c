@@ -579,10 +579,11 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 	    sprintf(str,"%u",passAprs(mycall)); //generujemy auto z znaku delikwenta
     	    strcpy(Pass,str);
 	}
-	strcpy(Pass,dbPass);
+	else
+    	    strcpy(Pass,dbPass);
 	str[0]=0;
 
-        sprintf( UDPbuf, "S0;0;0;0;%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
+        sprintf( UDPbuf, "S0;1;0;0;%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
                                 name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,vbat,t1,t2,hum,mycall);
 
     	//wylicznie hasha
@@ -605,15 +606,12 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 }
 
 
-
-
-int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
-
+void save_Slog( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
 
     int i,newS=1;
     time_t minTime=time(NULL),difftime,lTime=time(NULL);
     struct tm* tm_info;
-/*
+
     tm_info = localtime(&lTime);
 
     char s[30],s1[20],sf[50];
@@ -621,7 +619,30 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     strftime(s1, 26, "%Y-%m-%d", tm_info);
     sprintf(sf,"/tmp/log_%s.csv",s1);
     FILE* fi;
-*/
+
+//char *name,frameno,   lat,     lon,  alt,speed,   dir,clmb,typ, ozon,aux,press,       frq,vbat, float t1, float t2, float hum
+//    M4353239;01151;49.44570;17.14525;1704 ; 9.14;162.18;5.28;9  ,0.000;0  ;  0.0;         0;0.0 ;0.0;0.0;0.0
+//    M4353239;02920;49.38820;17.25604;10342;22.68;158.89;5.77;9  ,0.000;0  ;244.3;2684354560;0.0 ;26815615859
+
+//    if(saveLog){
+        fi = fopen(sf, "a+");
+	if (fi){
+    	    fprintf(fi,"%s;%s;%05u;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.2f;%i,%0.3f;%i;%0.1f;%0.3f;%02.1f;%03.1f;%03.1f;%03.1f;\n",
+		s,name,frameno,X2C_DIVL(lat,1.7453292519943E-2),X2C_DIVL(lon,1.7453292519943E-2),alt,speed,dir,climb, typ,ozon,aux,press,frq,vbat,t1,t2,hum);
+	    fclose(fi);
+        }
+	
+//    }
+
+
+
+}
+
+int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
+
+    int i,newS=1;
+    time_t minTime=time(NULL),difftime,lTime=time(NULL);
+    struct tm* tm_info;
     
     if(t1<-250 || t1>80) t1=0;
     if(t2<-250 || t2>80) t2=0;
@@ -665,19 +686,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     }
     if(save2csv) save_csv();
 
-//char *name,frameno,   lat,     lon,  alt,speed,   dir,clmb,typ, ozon,aux,press,       frq,vbat, float t1, float t2, float hum
-//    M4353239;01151;49.44570;17.14525;1704 ; 9.14;162.18;5.28;9  ,0.000;0  ;  0.0;         0;0.0 ;0.0;0.0;0.0
-//    M4353239;02920;49.38820;17.25604;10342;22.68;158.89;5.77;9  ,0.000;0  ;244.3;2684354560;0.0 ;26815615859
-/*
-    if(saveLog){
-        fi = fopen(sf, "a+");
-	if (fi){
-    	    fprintf(fi,"%s;%s;%05u;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.2f;%i,%0.3f;%i;%0.1f;%0.3f;%02.1f;%03.1f;%03.1f;%03.1f;\n",
-		s,name,frameno,X2C_DIVL(lat,1.7453292519943E-2),X2C_DIVL(lon,1.7453292519943E-2),alt,speed,dir,climb, typ,ozon,aux,press,frq,vbat,t1,t2,hum);
-        }
-	fclose(fi);
-    }
-*/
+
 }
  
 
@@ -1966,7 +1975,7 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
     //SKP
         store_sonde_db( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz,0,anonym1->temp,0,anonym1->hyg);
         store_sonde_rs( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz,0,anonym1->temp,0,anonym1->hyg,usercall);
- 
+	if(saveLog) save_Slog( objname,frameno,anonym1->lat,anonym1->long0,anonym1->heig,anonym1->speed,anonym1->dir,anonym1->climb,9,2,0,anonym1->ozon,anonym1->aux,anonym1->hp,(double)mhz,0,anonym1->temp,0,anonym1->hyg);
       }
       crdone = 1;
    }
@@ -2484,6 +2493,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
 	    //SKP
             store_sonde_db(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0);
             store_sonde_rs(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0,usercall);
+	    if(saveLog) save_Slog(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0);
          }
       }
    }
@@ -2659,6 +2669,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
             anonym->lastsent = osic_time();
             store_sonde_db(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0); 
             store_sonde_rs(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0,usercall); 
+	    if(saveLog) save_Slog(id+2,0,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0); 
         }
     }
     
@@ -3216,11 +3227,13 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
       pc->framesent = 1;
       //SKP
       store_sonde_db( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
+      if(saveLog) save_Slog( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
    }
    
      
      if (((pc && nameok) && lat!=0.0) && long0!=0.0) {
         store_sonde_rs( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0,usercall);
+	if(saveLog) save_Slog( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
      }
 /*  IF verb THEN WrStrLn("") END;   */
 } /* end decoders41() */
@@ -3415,6 +3428,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
 
       store_sonde_db( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq,vbat,temp1,temp2,fq555);
       store_sonde_rs( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq,vbat,temp1,temp2,fq555,usercall);
+      if(saveLog) save_Slog( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,1,0,0,0,0,0.0,frq,vbat,temp1,temp2,fq555);
       pc->framesent = 1;
 
     }
@@ -3687,7 +3701,8 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
       
       store_sonde_db( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
       store_sonde_rs( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0,usercall);
-      
+      if(saveLog) save_Slog( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
+
       pc->framesent = 1;
    }
 } /* end decodepils() */
