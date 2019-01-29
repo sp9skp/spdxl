@@ -2825,6 +2825,9 @@ BOOL RINEX_DecodeGPSNavigationFile(
   if( result == FALSE )
   {
     GNSS_ERROR_MSG( "RINEX_GetHeader returned FALSE." );
+    FILE *ftoold=fopen("/tmp/toold", "ab+");
+    if(ftoold) fclose(ftoold);
+
     return FALSE;
   }
 
@@ -3928,6 +3931,9 @@ BOOL RINEX_GetKlobucharIonoParametersFromNavFile(
   if( result == FALSE )
   {
     GNSS_ERROR_MSG( "RINEX_GetHeader returned FALSE." );
+    FILE *ftoold=fopen("/tmp/toold", "ab+");
+    if(ftoold) fclose(ftoold);
+
     return FALSE;
   }
 

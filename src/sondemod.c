@@ -1894,7 +1894,8 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                   }
                   if (almage+maxalmage>gpstime) anonym0->posok = 1;
                   else if (almanachage>0UL) {
-		     fopen("/tmp/toold", "ab+");
+		     FILE *ftoold=fopen("/tmp/toold", "ab+");
+		     if(ftoold) fclose(ftoold);
                      osic_WrINT32(almanachage/60UL, 10UL);
                      osi_WrStrLn(" Min (almanach too old)", 24ul);
                      if (almread+4UL<=systime) {
@@ -1950,7 +1951,8 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
 */
 
    if (contextr9.posok  && contextr9.lat!=0.0 && contextr9.long0!=0.0 && contextr9.heig==0.0 && contextr9.dir==0.0) {
-	fopen("/tmp/toold", "ab+");
+	FILE *ftoold=fopen("/tmp/toold", "ab+");
+	if(ftoold) fclose(ftoold);
    }
 
    if (contextr9.posok  && contextr9.lat!=0.0 && contextr9.long0!=0.0) {
