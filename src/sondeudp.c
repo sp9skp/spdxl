@@ -1785,6 +1785,7 @@ static void decodeframe10(uint32_t m)
    char ids[201];
    //char s[201+6];
    char s[400];
+    float fq555;
    struct M10 * anonym;
    struct CHAN * anonym0; /* call if set */
    { /* with */
@@ -1792,36 +1793,69 @@ static void decodeframe10(uint32_t m)
       cs = (uint32_t)crcm10(99L, anonym->rxbuf, 101ul);
       if (cs==m10card(anonym->rxbuf, 101ul, 99L, 2L)) {
          /* crc ok */
-
-         tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
-         week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
-         time0 = tow/1000UL+week*604800UL+315964800UL;
-         if (verb2) {
-            osi_WrStr(" ", 2ul);
-            aprsstr_DateToStr(time0, s, 201ul);
-            osi_WrStr(s, 201ul);
-            osi_WrStr(" ", 2ul);
-         } 
-	 temp1=M10get_Temp(m);
-	 temp2=M10get_Tntc2(m);
-	 float fq555 = get_TLC555freq(m);
-	 vbat=(float)((256*(unsigned char)anonym->rxbuf[70]+(unsigned char)anonym->rxbuf[69])*0.00668);
-         lat = (double)m10card(anonym->rxbuf, 101ul, 14L,4L)*8.3819036711397E-8;
-         lon = (double)m10card(anonym->rxbuf, 101ul, 18L,4L)*8.3819036711397E-8;
-         alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
-         ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
-         if (ci>32767L) ci -= 65536L;
-         ve = (double)ci*0.005;
-         ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
-         if (ci>32767L) ci -= 65536L;
-         vn = (double)ci*0.005;
-         ci = (int32_t)m10card(anonym->rxbuf, 101ul, 8L, 2L);
-         if (ci>32767L) ci -= 65536L;
-         vv = (double)ci*0.005;
-         v = (double)osic_sqrt((float)(ve*ve+vn*vn));
+	 if((unsigned char)anonym->rxbuf[1]==0x9f && (unsigned char)anonym->rxbuf[2]==0x20){
+	
+    	     tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
+    	     week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
+    	     time0 = tow/1000UL+week*604800UL+315964800UL;
+    	     if (verb2) {
+        	osi_WrStr(" ", 2ul);
+        	aprsstr_DateToStr(time0, s, 201ul);
+        	osi_WrStr(s, 201ul);
+        	osi_WrStr(" ", 2ul);
+             } 
+	     temp1=M10get_Temp(m);
+	     temp2=M10get_Tntc2(m);
+	     fq555 = get_TLC555freq(m);
+	     vbat=(float)((256*(unsigned char)anonym->rxbuf[70]+(unsigned char)anonym->rxbuf[69])*0.00668);
+             lat = (double)m10card(anonym->rxbuf, 101ul, 14L,4L)*8.3819036711397E-8;
+             lon = (double)m10card(anonym->rxbuf, 101ul, 18L,4L)*8.3819036711397E-8;
+             alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
+             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
+             if (ci>32767L) ci -= 65536L;
+             ve = (double)ci*0.005;
+             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
+             if (ci>32767L) ci -= 65536L;
+             vn = (double)ci*0.005;
+             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 8L, 2L);
+             if (ci>32767L) ci -= 65536L;
+             vv = (double)ci*0.005;
+             v = (double)osic_sqrt((float)(ve*ve+vn*vn));
                 // hor speed
-         dir = atang2(vn, ve)*5.7295779513082E+1;
-         if (dir<0.0) dir = 360.0+dir;
+             dir = atang2(vn, ve)*5.7295779513082E+1;
+             if (dir<0.0) dir = 360.0+dir;
+	 }
+	 else if((unsigned char)anonym->rxbuf[1]==0xAF && (unsigned char)anonym->rxbuf[2]==0x02){
+	     int tim=m10card(anonym->rxbuf, 101ul, 0x15, 3L);
+	     int dat=m10card(anonym->rxbuf, 101ul, 0x18, 3L);
+    	     time0 = 2678400*(dat%10000)/100 +86400*dat/10000 +3600*(tim/10000)+60*((tim%10000)/100)+ ((tim%100)/1); //tow/1000UL+week*604800UL+315964800UL;
+    	     if (verb2) {
+        	osi_WrStr(" ", 2ul);
+        	aprsstr_DateToStr(time0, s, 201ul);
+        	osi_WrStr(s, 201ul);
+        	osi_WrStr(" ", 2ul);
+             } 
+	     temp1=M10get_Temp(m);
+	     temp2=M10get_Tntc2(m);
+	     fq555 = get_TLC555freq(m);
+	     vbat=(float)((256*(unsigned char)anonym->rxbuf[70]+(unsigned char)anonym->rxbuf[69])*0.00668);
+             lat = (double)m10card(anonym->rxbuf, 101ul, 0x04,4L)*1e-6;
+             lon = (double)m10card(anonym->rxbuf, 101ul, 0x08,4L)*1e-6;
+             alt = (double)m10card(anonym->rxbuf, 101ul, 0x0c, 3L)*0.01;
+             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 0x0f, 2L);
+             if (ci>32767L) ci -= 65536L;
+             ve = (double)ci*0.005;
+             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 0x11, 2L);
+             if (ci>32767L) ci -= 65536L;
+             vn = (double)ci*0.005;
+             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 0x13, 2L);
+             if (ci>32767L) ci -= 65536L;
+             vv = (double)ci*0.005;
+             v = (double)osic_sqrt((float)(ve*ve+vn*vn));
+                // hor speed
+             dir = atang2(vn, ve)*5.7295779513082E+1;
+             if (dir<0.0) dir = 360.0+dir;
+	 } 
 
 
 
@@ -1935,6 +1969,13 @@ static void demodbyte10(uint32_t m, char d)
             anonym->rxbuf[0U] = 'd';
             anonym->rxbuf[1U] = '\237';
             anonym->rxbuf[2U] = ' ';
+         }
+         if ((anonym->synword&16777215UL)==6598402UL) {
+            anonym->rxp = 3UL;
+            anonym->rxb = 0UL;
+            anonym->rxbuf[0U] = 0x64;
+            anonym->rxbuf[1U] = 0xAF;
+            anonym->rxbuf[2U] = 0x02;
          }
       }
       else {
