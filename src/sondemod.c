@@ -3169,6 +3169,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 2UL)*0.1;
                ozonval = calcOzone(pc->ozonuA, pc->ozonTemp, pc->hp);
 	       pc->ozonval=ozonval; 	//SKP
+	       pc->aux=1;
                if (sondeaprs_verb) {
                   osi_WrStr(" OZON:(", 8ul);
                   osic_WrFixed((float)pc->ozonTemp, 2L, 1UL);
