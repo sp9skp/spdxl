@@ -563,6 +563,7 @@ static void updateChanT(){
    double fhz;
 
    double khz;
+   long int qrg;
 
    khz = 1.0;
    if (iqrate>2048000) khz = (double)iqrate/(double)2048000;
@@ -579,7 +580,12 @@ static void updateChanT(){
 	   sndbufft[0]=0;
 	   strcat(sndbufft,"9 S K P ");
       }
-      sprintf(tmp,"%02i%06li",i+1,(long int)((midfreq/1000+(int32_t)rxx[i].df*khz+tt)));
+
+      qrg=midfreq/1000+(int32_t)rxx[i].df*khz+tt;
+      
+      if(qrg>999000) qrg=(long int)(qrg/10);
+
+      sprintf(tmp,"%02i%06li",i+1,(long int)(qrg));
       tmp1[0]=tmp[0];
       tmp1[1]=' ';
       tmp1[2]=tmp[1];
@@ -599,6 +605,7 @@ static void updateChanT(){
       tmp1[16]=tmp[8];
       tmp1[17]=' ';
       tmp1[18]=0;
+      printf("DEB:%s\n",tmp);
       strcat(sndbufft,tmp1);
       ++i;
       j++;

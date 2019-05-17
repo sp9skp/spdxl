@@ -739,6 +739,7 @@ static void Config(void)
          anonym->configbaud = 4800UL;
          anonym->demodbaud = (2UL*anonym->configbaud*65536UL)/adcrate;
          initafir(anonym->afirtab, 0UL, 2800UL,X2C_DIVR((float)chan[c].configequalizer,100.0f));
+	 //initafir(anonym->afirtab, 0UL,   12600UL,X2C_DIVR((float)chan[c].configequalizer,100.0f)); //12600
          anonym->baudfine = 0L;
          anonym->noise = 0.0f;
          anonym->bitlev = 0.0f;

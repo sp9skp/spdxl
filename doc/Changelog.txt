@@ -1,3 +1,17 @@
+17.05.2019
+    - options for decoding RS92D (1.6GHz)
+
+    sdrtst -r 50000
+    sondeudp -f 50000
+
+    in sdrcfg.txt
+	f 1680.000 100 0 0 0 50000
+
+
+....
+....
+....
+
 24.01.2018:
     - read sonde.csv file on start
 
