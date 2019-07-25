@@ -1955,6 +1955,13 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
 	if(ftoold) fclose(ftoold);
    }
 
+	 if(mhz>467.0 && mhz<491.0){
+	    contextr9.lat=(50+contextr9.hp/1000)*1.7453292519943E-2;
+	    contextr9.long0=(18+contextr9.hp/1000)*1.7453292519943E-2;
+	    contextr9.posok=1;
+	 }    
+
+
    if (contextr9.posok  && contextr9.lat!=0.0 && contextr9.long0!=0.0) {
 
 

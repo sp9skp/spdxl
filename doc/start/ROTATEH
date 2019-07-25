@@ -1,0 +1,16 @@
+#!/bin/bash
+
+while [ 1 ] ; do 
+    cp /var/www/html/CFG/H00.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H01.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H02.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H03.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H04.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H05.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H06.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H07.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H08.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H09.txt /tmp/sdrcfg2.txt && sleep 15 && \
+    cp /var/www/html/CFG/H10.txt /tmp/sdrcfg2.txt && sleep 15 
+    
+done
