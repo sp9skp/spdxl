@@ -585,6 +585,8 @@ static void updateChanT(){
       
       if(qrg>999000) qrg=(long int)(qrg/10);
 
+      rxx[i].afckhz=0;						// reset AFC
+
       sprintf(tmp,"%02i%06li",i+1,(long int)(qrg));
       tmp1[0]=tmp[0];
       tmp1[1]=' ';

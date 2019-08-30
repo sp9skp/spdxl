@@ -769,7 +769,7 @@ static void Config(void)
       }
       { // with
          struct PILS * anonym5 = &chan[c].pils;
-         anonym5->configbaud = 4808UL;
+         anonym5->configbaud = 4804UL;
          anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate; //4800
 //         initafir(anonym5->afirtab, 0UL, 2200UL, X2C_DIVR((float)(chan[c].configequalizer+120),100.0f)); //V9
 	initafir(anonym5->afirtab, 0UL, 2200UL, X2C_DIVR((float)(chan[c].configequalizer+60),100.0f)); //v10	

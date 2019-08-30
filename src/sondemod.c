@@ -266,6 +266,7 @@ struct CONTEXTR4 {
    char serialNumber[6];
    unsigned long killTimer;
    double ozonval;
+   float vbat;
 };
 
 struct CONTEXTM10;
@@ -2771,6 +2772,14 @@ static int32_t getint16(const char frame[], uint32_t frame_len,
    return (int32_t)n;
 } /* end getint16() */
 
+static int32_t getint24(const char frame[], uint32_t frame_len, uint32_t p)
+{
+   uint32_t n;
+   n = (uint32_t)(uint8_t)frame[p]+ 256UL*(uint32_t)(uint8_t)frame[p+1UL] +512UL*(uint32_t)(uint8_t)frame[p+2UL];
+   if (n>=8388608UL) return (int32_t)(n-16777216UL);
+   return (int32_t)n;
+} /* end getint16() */
+
 
 static uint32_t gethex(const char frame[], uint32_t frame_len,
                 uint32_t p, uint32_t nibb)
@@ -3029,12 +3038,16 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
          }
          frameno = (uint32_t)getint16(rxb, rxb_len, p);
+	 
+	
          if (frameno>pc->framenum) {
             /* new frame number */
             pc->framesent = 0;
             calok = 1;
             pc->framenum = frameno;
             pc->tused = systime;
+	    pc->vbat = (float)(getint24(rxb, rxb_len, p+10))/10.0;
+	     printf("VBAT:%f\n",pc->vbat);
          }
          else if (pc->framenum==frameno && !pc->framesent) calok = 1;
          else if (frameno<pc->framenum && sondeaprs_verb) {
@@ -3236,14 +3249,14 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 sondeaprs_nofilter,"RS41",5,0);
       pc->framesent = 1;
       //SKP
-      store_sonde_db( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
-      if(saveLog) save_Slog( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
+      store_sonde_db( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,pc->vbat,0,0,0);
+      if(saveLog) save_Slog( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,pc->vbat,0,0,0);
    }
    
      
      if (((pc && nameok) && lat!=0.0) && long0!=0.0) {
-        store_sonde_rs( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0,usercall);
-	if(saveLog) save_Slog( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,0,0,0,0);
+        store_sonde_rs( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,pc->vbat,0,0,0,usercall);
+	if(saveLog) save_Slog( pc->name,frameno,lat,long0,heig,speed,dir,climb,4,pc->burstKill,pc->swVersion,pc->ozonval,pc->aux,0.0,(double)pc->mhz0,pc->vbat,0,0,0);
      }
 /*  IF verb THEN WrStrLn("") END;   */
 } /* end decoders41() */
