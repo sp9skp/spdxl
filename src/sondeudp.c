@@ -3722,9 +3722,10 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
     }
 
     int dig=0;
+    int ii;
 
-    for(int i=2;i<strlen(chan[m].dfm6.id);i++){
-	if(chan[m].dfm6.id[i]>57 || chan[m].dfm6.id[i]<48) dig=1;
+    for(ii=2;ii<strlen(chan[m].dfm6.id);ii++){
+	if(chan[m].dfm6.id[ii]>57 || chan[m].dfm6.id[ii]<48) dig=1;
     }
 
 
