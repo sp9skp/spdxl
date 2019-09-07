@@ -3599,7 +3599,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
         // if (conf_id > 6) gpx.SN6 = 0;  // -> DFM-09,PS-15  // SNbit?
         // SN/ID immer im letzten Kanal? davor xy00000-Kanal? (mind. 1)
         if ((chan[m].dfm6.sonde_typ & 0xF) < 9  &&  conf_id == 6) {
-            SN6 = bits2val(conf_bits+4, 4*5);   // DFM-06: Kanal 6
+            SN6 = bits2val(conf_bits+4, 4*6);   // DFM-06: Kanal 6
             if (SN6 == chan[m].dfm6.SN6  &&  SN6 != 0) { // nur Nibble-Werte 0..9
                 chan[m].dfm6.sonde_typ = RSNbit | 6;
 //                ptu_out = 6;
@@ -3686,7 +3686,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
                     chan[m].dfm6.SN = SN;
 //                    ptu_out = 0;
                     ret = 15;
-                    sprintf(chan[m].dfm6.id, "DF00%6u", chan[m].dfm6.SN);
+                    sprintf(chan[m].dfm6.id, "DF%08u", chan[m].dfm6.SN);
                 }
                 else {
                     chan[m].dfm6.sonde_typ = 0;
