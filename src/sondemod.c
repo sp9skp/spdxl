@@ -2537,7 +2537,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
    char typ[10];
    int  typm=6;
 
-   if ((rxb[0UL]!='D')||( (rxb[1UL]!='6') && (rxb[1UL]!='9') && (rxb[1UL]!='F') )) return;
+   if ((rxb[0UL]!='D')||( (rxb[1UL]!='6') && (rxb[1UL]!='9') && (rxb[1UL]!='F') && (rxb[1UL]!='X'))) return;
 
     if(rxb[1UL]=='9') typm=7;
     else if(rxb[1UL]=='F') typm=15;
@@ -3748,7 +3748,7 @@ static void udprx(void)
    int32_t len;
    len = udpreceiveblock(rxsock, chan[sondemod_LEFT].rxbuf, 520L, &fromport, &ip);
    systime = osic_time();
-  
+
   if (len>0) switch (len){ 
       case 240: decodeframe(sondemod_LEFT, ip, fromport); break;
       case 28:  decodec34(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;

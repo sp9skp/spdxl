@@ -3592,21 +3592,19 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
 
     if (conf_id > 4 && conf_id > max_ch) max_ch = conf_id; // mind. 5 Kanaele // reset? lower 0xsCaaaab?
 
-    if (conf_id > 4 && conf_id == (nul_ch>>4)+1)
-    {
-        sn2_ch = bits2val(conf_bits, 8);
-    }
+    if (conf_id > 4 && conf_id == (nul_ch>>4)+1)  sn2_ch = bits2val(conf_bits, 8);
+    
 
         // gibt es Kanaele > 6 (2-teilige ID)?
         // if (conf_id > 6) gpx.SN6 = 0;  // -> DFM-09,PS-15  // SNbit?
         // SN/ID immer im letzten Kanal? davor xy00000-Kanal? (mind. 1)
-        if ((chan[m].dfm6.sonde_typ & 0xF) < 7  &&  conf_id == 6) {
-            SN6 = bits2val(conf_bits+4, 4*6);   // DFM-06: Kanal 6
+        if ((chan[m].dfm6.sonde_typ & 0xF) < 9  &&  conf_id == 6) {
+            SN6 = bits2val(conf_bits+4, 4*5);   // DFM-06: Kanal 6
             if (SN6 == chan[m].dfm6.SN6  &&  SN6 != 0) { // nur Nibble-Werte 0..9
                 chan[m].dfm6.sonde_typ = RSNbit | 6;
 //                ptu_out = 6;
                 ret = 6;
-                sprintf(chan[m].dfm6.id, "D6%6X", chan[m].dfm6.SN6);
+                sprintf(chan[m].dfm6.id, "D6%08X", chan[m].dfm6.SN6);
             }
             else {
                 chan[m].dfm6.sonde_typ = 0;
@@ -3625,7 +3623,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
                     chan[m].dfm6.SN = SN;
 //                    ptu_out = 9;
                     ret = 9;
-                    sprintf(chan[m].dfm6.id, "D9%6u", chan[m].dfm6.SN);
+                    sprintf(chan[m].dfm6.id, "D9%08u", chan[m].dfm6.SN);
                 }
                 else {
                     chan[m].dfm6.sonde_typ = 0;
@@ -3646,7 +3644,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
                     chan[m].dfm6.SN = SN;
 //                    ptu_out = 9;
                     ret = 17;
-            	    sprintf(chan[m].dfm6.id, "DG%1X%6u", chan[m].dfm6.sonde_typ & 0xF, chan[m].dfm6.SN);
+            	    sprintf(chan[m].dfm6.id, "DG0%1X%6u", chan[m].dfm6.sonde_typ & 0xF, chan[m].dfm6.SN);
                 }
                 else {
                     chan[m].dfm6.sonde_typ = 0;
@@ -3667,7 +3665,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
                     chan[m].dfm6.SN = SN;
 //                    ptu_out = 9;
                     ret = 18;
-                    sprintf(chan[m].dfm6.id, "DG%1X%6u", chan[m].dfm6.sonde_typ & 0xF, chan[m].dfm6.SN);
+                    sprintf(chan[m].dfm6.id, "DG0%1X%6u", chan[m].dfm6.sonde_typ & 0xF, chan[m].dfm6.SN);
                 }
                 else {
                     chan[m].dfm6.sonde_typ = 0;
@@ -3688,7 +3686,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
                     chan[m].dfm6.SN = SN;
 //                    ptu_out = 0;
                     ret = 15;
-                    sprintf(chan[m].dfm6.id, "DF%6u", chan[m].dfm6.SN);
+                    sprintf(chan[m].dfm6.id, "DF00%6u", chan[m].dfm6.SN);
                 }
                 else {
                     chan[m].dfm6.sonde_typ = 0;
@@ -3722,6 +3720,32 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
             chan[m].dfm6.status[1] = val/100.0;
         }
     }
+
+    int dig=0;
+
+    for(int i=2;i<strlen(chan[m].dfm6.id);i++){
+	if(chan[m].dfm6.id[i]>57 || chan[m].dfm6.id[i]<48) dig=1;
+    }
+
+
+    if(chan[m].dfm6.id[3]==NULL || dig){
+        time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+        int czas=tm.tm_mon + 1 + tm.tm_mday;
+
+	chan[m].dfm6.id[0]='D';
+        chan[m].dfm6.id[1]='6';
+        chan[m].dfm6.id[2]='D';
+        chan[m].dfm6.id[3]='X';
+        chan[m].dfm6.id[4]=65+tm.tm_hour;
+        chan[m].dfm6.id[5]=65+(int)(czas/25);
+        chan[m].dfm6.id[6]=65+czas%25;
+        chan[m].dfm6.id[7]=chan[m].freq[2];//rxb[58];
+        chan[m].dfm6.id[8]=chan[m].freq[3];//rxb[59];
+        chan[m].dfm6.id[9]=chan[m].freq[4];//rxb[60];
+        chan[m].dfm6.id[10]=0;
+    }
+
 
     return ret;
 }
@@ -3779,7 +3803,11 @@ static char sendDFM(uint32_t m){
     s[0]=0;
     char i;
     
+;
+
     if (strlen(chan[m].dfm6.id)>5){
+
+    //printf("txID:%s\n",chan[m].dfm6.id);
 
 /*        if ((chan[m].dfm6.sonde_typ & 0xFF) == 6) 
           sprintf(tmp,"D6%08X", chan[m].dfm6.SN6);
@@ -3788,9 +3816,10 @@ static char sendDFM(uint32_t m){
 */
 	sprintf(tmp, chan[m].dfm6.id);
 	tmp[10]=0;
-	for(i=2;i<10;i++)
+/*	for(i=2;i<10;i++)
 	    if(tmp[i]<48 || tmp[i]>57)
 		return -1; 
+*/
 	strcat(s,tmp);
 
 	sprintf(tmp,"%04d", chan[m].dfm6.frnr);
