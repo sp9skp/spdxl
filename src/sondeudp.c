@@ -1342,6 +1342,16 @@ static char crcrs(const char frame[], uint32_t frame_len,
 
 static uint16_t sondeudp_POLYNOM = 0x1021U;
 
+void printCnDT(uint32_t m){
+
+	int hours, minutes, seconds, day, month, year;
+	time_t now;
+	time(&now);
+        struct tm *local = localtime(&now);
+
+	printf("%02i (%04d-%02d-%02d %02d:%02d:%02d):",m+1,local->tm_year + 1900,local->tm_mon + 1,local->tm_mday,local->tm_hour, local->tm_min, local->tm_sec);
+}
+
 
 static void decodeframe92(uint32_t m)
 {
@@ -1363,6 +1373,9 @@ static void decodeframe92(uint32_t m)
       alludp(anonym->udptx, 240UL, chan[m].r92.rxbuf, 256ul);
    }
    if (verb) {
+
+
+
       p = 6UL;
       if (chan[m].r92.rxbuf[6U]=='e') {
          ++p;
@@ -1370,7 +1383,7 @@ static void decodeframe92(uint32_t m)
                 /* +crc */
          ++p;
          if (maxchannels>0UL) {
-	    printf("%02i:",m+1);
+	    printCnDT(m);
          }
          osi_WrStr("R92 ", 5ul);
          if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 256ul, 8L,
@@ -2747,7 +2760,7 @@ static void decode41(uint32_t m)
       } while (!(allok || try0>2UL));
       if (verb && nameok>0UL) {
          if (maxchannels>0UL) {
-	      printf("%02i:",m+1);
+	      printCnDT(m);
          }
          osi_WrStr("R41 ", 5ul);
          for (i = 0UL; i<=7UL; i++) {
