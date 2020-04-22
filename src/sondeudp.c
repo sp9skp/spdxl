@@ -4654,6 +4654,26 @@ static void getadc(void)
 		chno=(int)(((char)adcbuf[pos]-48)*10+((char)adcbuf[pos+1]-48)-1);
 		if(chno<0) break;
 
+		struct R92 * anonymz = &chan[chno].r92;
+		anonymz->rxp = 0UL;
+		anonymz->rxbitc = 0UL;
+		anonymz->rxbyte = 0UL;
+		struct R41 * anonym0 = &chan[chno].r41;
+		anonym0->rxp = 0UL;
+		anonym0->rxbitc = 0UL;
+		anonym0->rxbyte = 0UL;
+		struct PILS * anonym5 = &chan[chno].pils;
+		anonym5->rxp = 0UL;
+		anonym5->rxbitc = 0UL;
+		anonym5->rxbyte = 0UL;
+		struct DFM6 * anonym1 = &chan[chno].dfm6;
+		anonym1->rxp = 264UL;
+		struct M10 * anonym6 = &chan[chno].m10;
+		anonym6->rxp = 101UL;
+		struct C34 * anonym2 = &chan[chno].c34;
+		anonym2->rxp = 0UL;
+
+
 		chan[chno].freq[0]=adcbuf[pos+2];
 		chan[chno].freq[1]=adcbuf[pos+3];
 		chan[chno].freq[2]=adcbuf[pos+4];
