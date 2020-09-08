@@ -2667,7 +2667,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
 
 
 
-        if(lat>0 && lon>0 && alt>=0 && ok>0){
+        if(lat>0 && lon>0 && alt>=0 && alt<45000){
                sondeaprs_senddata(lat, lon, alt, vH, Dir,
                                   vV, 0.0, 0.0, T, 0.0,
                                   0.0, 0.0, 0,frq+0.001, 0.0,
