@@ -2537,10 +2537,11 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
    char typ[10];
    int  typm=6;
 
-   if ((rxb[0UL]!='D')||( (rxb[1UL]!='6') && (rxb[1UL]!='9') && (rxb[1UL]!='F') && (rxb[1UL]!='X'))) return;
+   if ((rxb[0UL]!='D')||( (rxb[1UL]!='6') && (rxb[1UL]!='9') && (rxb[1UL]!='D') && (rxb[1UL]!='F') && (rxb[1UL]!='X'))) return;
 
     if(rxb[1UL]=='9') typm=7;
     else if(rxb[1UL]=='F') typm=15;
+    else if(rxb[1UL]=='D') typm=17;
 
     sprintf(typ,"DFM0%c",rxb[1UL]);
     tmp[0]=rxb[0];    tmp[1]=rxb[1];    tmp[2]=rxb[2];    tmp[3]=rxb[3];    tmp[4]=rxb[4];    tmp[5]=rxb[5];    tmp[6]=rxb[6];
