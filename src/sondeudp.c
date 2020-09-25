@@ -3613,10 +3613,11 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
 
     if (conf_id > 4 && conf_id > max_ch) max_ch = conf_id; // mind. 5 Kanaele // reset? lower 0xsCaaaab?
     if (conf_id > 4 && conf_id == (nul_ch>>4)+1){
-        if(conf_id==6){
+       if(conf_id==6){
             chan[m].dfm6.SN6=bits2val(conf_bits+4,24);
             chan[m].dfm6.ok=1;
-            sprintf(chan[m].dfm6.id,"D6%06x", dfm6typ,chan[m].dfm6.SN6);
+            sprintf(chan[m].dfm6.id,"D6%08x", chan[m].dfm6.SN6);
+            dfm6typ=0x06;
         }else{
             sn2_ch = bits2val(conf_bits, 8);
             snt=bits2val(conf_bits+8, 16);
