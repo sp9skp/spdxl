@@ -230,6 +230,10 @@ struct PILS {
    double poklat;
    double poklon;
    double pokalt;
+    uint32_t SNL;
+    uint32_t SNH;
+    uint32_t SNT;
+    int ok;
 
 
 
@@ -287,6 +291,11 @@ struct DFM6 {
     float meas24[5];
     float status[2];
     char newsonde;
+    uint32_t SNL;
+    uint32_t SNH;
+    uint32_t SNT;
+    int ok;
+
 
 };
 
@@ -3569,13 +3578,14 @@ float get_Temp4(float *meas) { // meas[0..4]
 }
 
 
+
 #define SNbit 0x0100
 int conf_out(uint8_t *conf_bits,uint32_t m) {
     int ret = 0;
     int val;
     uint8_t conf_id;
     uint8_t hl;
-    uint32_t SN6, SN;
+    uint32_t SN6, SN, snt;
     static int chAbit, chA[2];
     static int chCbit, chC[2];
     static int chDbit, chD[2];
@@ -3590,6 +3600,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
 
     conf_id = bits2val(conf_bits, 4);
 
+
     if (conf_id > 4 && bits2val(conf_bits+8, 4*5) == 0) nul_ch = bits2val(conf_bits, 8);
 
 
@@ -3602,62 +3613,38 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
 
     if (conf_id > 4 && conf_id > max_ch) max_ch = conf_id; // mind. 5 Kanaele // reset? lower 0xsCaaaab?
     if (conf_id > 4 && conf_id == (nul_ch>>4)+1){
-        sn2_ch = bits2val(conf_bits, 8);
-        if ((sn2_ch & 0x0F) == 0x0A ) dfm6typ=0x09;                                                             //DFM-9
-        if ((sn2_ch & 0x0F) == 0x0C || (sn2_ch & 0x0F) == 0x0D) dfm6typ=0x0D;   //DFM17
-        if ((sn2_ch & 0x0F) == 0x00 ) dfm6typ=0x0F;                                     //DFM15
-        if(dfm6typ!=chan[m].dfm6.sonde_typ){
-            chan[m].dfm6.sonde_typ = dfm6typ;
-            chan[m].dfm6.SN=0;
-            chan[m].dfm6.id[0]=0;
-        }
-        sn_ch = ((sn2_ch>>4) & 0xF);
-        if (conf_id == sn_ch)
-            {
-                if ( (nul_ch & 0x58) == 0x58 ) {
-                    SN6 = bits2val(conf_bits+4, 4*6);
-                    if (SN6 == chan[m].dfm6.SN6  &&  SN6 != 0) {
-                        chan[m].dfm6.sonde_typ = SNbit | 6;
-                        sprintf(chan[m].dfm6.id, "D6%6X", chan[m].dfm6.SN6);
-                    }
-                    else { // reset
-                        chan[m].dfm6.sonde_typ = 0;
-                    }
-                    chan[m].dfm6.SN6 = SN6;
-                }
-                else if (   (sn2_ch & 0xF) == 0xC || (sn2_ch & 0xF) == 0xD    // 0xsCaaaab, s==sn_ch , s: 0xA=DFM-09 , 0xC/0xD=DFM-17?
-                         || (sn2_ch & 0xF) == 0x0 )  // 0xs0aaaab, s==sn_ch , s: 0x7,0x8: pilotsonde PS-15?
-                {
-                    val = bits2val(conf_bits+8, 4*5);
-                    hl =  (val & 1);
-                    chX[hl] = (val >> 4) & 0xFFFF;
-                    chXbit |= 1 << hl;
-                    if (chXbit == 3) {
-                        SN = (chX[0] << 16) | chX[1];
-                        if ( SN == SN_X || SN_X == 0 ) {
-                            chan[m].dfm6.sonde_typ = SNbit | sn_ch;
-                            chan[m].dfm6.SN = SN;
-
-                            if ((sn2_ch & 0x0F) == 0x0A ) chan[m].dfm6.sonde_typ=0x09;                                  //DFM-9
-                            if ((sn2_ch & 0x0F) == 0x0C || (sn2_ch & 0x0F) == 0x0D) chan[m].dfm6.sonde_typ=0x0D;        //DFM17
-                            if ((sn2_ch & 0x0F) == 0x00 ) chan[m].dfm6.sonde_typ=0x0F;                                  //DFM15
-
-                                sprintf(chan[m].dfm6.id, "D%1X%6u", chan[m].dfm6.sonde_typ & 0xF, chan[m].dfm6.SN);
-                        }
-                        else { // reset
-                            chan[m].dfm6.sonde_typ = 0;
-                        }
-                        SN_X = SN;
-                        chXbit = 0;
-                    }
-                }
-                ret = (chan[m].dfm6.sonde_typ);
+        if(conf_id==6){
+            chan[m].dfm6.SN6=bits2val(conf_bits+4,24);
+            chan[m].dfm6.ok=1;
+            sprintf(chan[m].dfm6.id,"D6%06x", dfm6typ,chan[m].dfm6.SN6);
+        }else{
+            sn2_ch = bits2val(conf_bits, 8);
+            snt=bits2val(conf_bits+8, 16);
+            if(sn2_ch!=chan[m].dfm6.SNT) {chan[m].dfm6.SNT=sn2_ch; chan[m].dfm6.SNL=0;chan[m].dfm6.SNH=0; chan[m].dfm6.SN6=0;}          //jesli inny typ - reset numeru sondy
+            switch(bits2val(conf_bits+24, 4)){
+                case 0:
+                    if((snt<<16)!=chan[m].dfm6.SNH) {chan[m].dfm6.SNH=snt<<16; chan[m].dfm6.SN6=0; chan[m].dfm6.ok=0;}
+                    else chan[m].dfm6.ok=1;
+                    break;
+                case 1:
+                    if(snt!=chan[m].dfm6.SNL) {chan[m].dfm6.SNL=snt;chan[m].dfm6.SN6=0;}
+                    else chan[m].dfm6.ok=1;
+                    break;
+                default:
+                    chan[m].dfm6.SNT=0; chan[m].dfm6.SNL=0; chan[m].dfm6.SNH=0; chan[m].dfm6.SN6=0; chan[m].dfm6.ok=0; printf("R2\n");          // reset
             }
+
+            if ((sn2_ch & 0xFF) == 0xAC ) dfm6typ=0x9;                          //DFM-9
+            if ((sn2_ch & 0xFF) == 0xCC ) dfm6typ=0xD;  //DFM17
+            if ((sn2_ch & 0x0F) == 0x0 ) dfm6typ=0xF;                           //DFM15
+
+            chan[m].dfm6.sonde_typ=dfm6typ;
+
+            if(chan[m].dfm6.SNT!=0 && chan[m].dfm6.SNL!=0 && chan[m].dfm6.SNH!=0)
+                { chan[m].dfm6.SN6=chan[m].dfm6.SNH | chan[m].dfm6.SNL; sprintf(chan[m].dfm6.id,"D%1X%06u", dfm6typ,chan[m].dfm6.SN6);}
+            else{chan[m].dfm6.id[0]=0; chan[m].dfm6.SN6=0;}
         }
-
-
-
-
+    }
     if (conf_id >= 0 && conf_id <= 4) {
         val = bits2val(conf_bits+4, 4*6);
         chan[m].dfm6.meas24[conf_id] = fl24(val);
@@ -3718,17 +3705,23 @@ void print_gpx(uint32_t m) {
 
           if((chan[m].dfm6.id[0]!='D')||(chan[m].dfm6.id[1]!='6')&&(chan[m].dfm6.id[1]!='9')&&(chan[m].dfm6.id[1]!='F')&&(chan[m].dfm6.id[1]!='D'))
             chan[m].dfm6.id[0]=0;
-	
-          printf("%02d:DFM %s ",m+1,chan[m].dfm6.id+2); 
-          printf("[%3d] ", chan[m].dfm6.frnr);
-          printf("lat: %.6f ", chan[m].dfm6.lat);
-          printf("lon: %.6f ", chan[m].dfm6.lon);
-          printf("alt: %.1f ", chan[m].dfm6.alt);
+          printCnDT(m);
+          switch(chan[m].dfm6.sonde_typ){
+            case 0x09: printf("DFM09"); break;
+            case 0x0D: printf("DFM17"); break;
+            case 0x0F: printf("DFM15"); break;
+            default: printf("DFM06");
+          }
+          printf(" %s ",chan[m].dfm6.id+2);
+          printf("[%3d] %06lu ", chan[m].dfm6.frnr,  86400*chan[m].dfm6.day+3600*chan[m].dfm6.hr+60*chan[m].dfm6.min+(int)chan[m].dfm6.sek );
+          printf("%.6f ", chan[m].dfm6.lat);
+          printf("%.6f ", chan[m].dfm6.lon);
+          printf("%.1f ", chan[m].dfm6.alt);
           printf("vH: %5.2f ", chan[m].dfm6.horiV);
           printf("D: %5.1f ", chan[m].dfm6.dir);
           printf("vV: %5.2f ", chan[m].dfm6.vertV);
           float t = get_Temp(chan[m].dfm6.meas24);
-	  float t4 = get_Temp4(chan[m].dfm6.meas24);
+          float t4 = get_Temp4(chan[m].dfm6.meas24);
           if (t > -270.0) printf("T=%.1fC ", t);
           if (t4 > -270.0) printf("T4=%.1fC ", t4);
           if ((chan[m].dfm6.sonde_typ & 0xFF) == 9) {
@@ -3737,6 +3730,7 @@ void print_gpx(uint32_t m) {
           }
       printf("\n");
 }
+
 
 static char sendDFM(uint32_t m){
     char s[200];
@@ -3749,19 +3743,11 @@ static char sendDFM(uint32_t m){
 
     if (strlen(chan[m].dfm6.id)>5){
 
-    //printf("txID:%s\n",chan[m].dfm6.id);
-
-/*        if ((chan[m].dfm6.sonde_typ & 0xFF) == 6) 
-          sprintf(tmp,"D6%08X", chan[m].dfm6.SN6);
-        if ((chan[m].dfm6.sonde_typ & 0xFF) == 9) 
-          sprintf(tmp,"D9%08u", chan[m].dfm6.SN9);
-*/
 	sprintf(tmp, chan[m].dfm6.id);
 	tmp[10]=0;
-/*	for(i=2;i<10;i++)
-	    if(tmp[i]<48 || tmp[i]>57)
-		return -1; 
-*/
+
+        if(chan[m].dfm6.ok==1) tmp[0]='E';
+
 	strcat(s,tmp);
 
 	sprintf(tmp,"%04d", chan[m].dfm6.frnr);
@@ -3830,6 +3816,7 @@ static char sendDFM(uint32_t m){
 	strcat(s,tmp);
 
 	alludp(chan[m].udptx, 88+5, s, 88+5);
+	chan[m].dfm6.ok=0;
 
     }
 

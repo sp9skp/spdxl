@@ -9,7 +9,7 @@
 
 
 #define DBS_SIZE 100
-
+#define SEND_INT 5
 
 #define BUFLEN 256
 #define PORT 9930
@@ -679,8 +679,9 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     dBs[i].t2=t2;
     dBs[i].hum=hum;
 
+    difftime=minTime-dBs[i].sendtime;
     if(disSKP==0){
-	if(alt<3000 || difftime>14 || newS){
+	if(alt<3000 || difftime>SEND_INT){
 	    saveMysql( name, frameno, dBs[i].lat, dBs[i].lon, alt, speed, dir, climb, typ, bk, swv, ozon, aux, press, frq,vbat,t1,t2,hum);
 	    dBs[i].sendtime=time(NULL);
 	}
@@ -2537,11 +2538,13 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
    char typ[10];
    int  typm=6;
 
-   if ((rxb[0UL]!='D')||( (rxb[1UL]!='6') && (rxb[1UL]!='9') && (rxb[1UL]!='D') && (rxb[1UL]!='F') && (rxb[1UL]!='X'))) return;
+   if (((rxb[0UL]!='D')||(rxb[0UL]!='E'))&&( (rxb[1UL]!='6') && (rxb[1UL]!='9') && (rxb[1UL]!='D') && (rxb[1UL]!='F') && (rxb[1UL]!='X'))) return;
 
     if(rxb[1UL]=='9') typm=7;
     else if(rxb[1UL]=='F') typm=15;
     else if(rxb[1UL]=='D') typm=17;
+
+    if(rxb[0UL]=='E') typm+=100;
 
     sprintf(typ,"DFM0%c",rxb[1UL]);
     tmp[0]=rxb[0];    tmp[1]=rxb[1];    tmp[2]=rxb[2];    tmp[3]=rxb[3];    tmp[4]=rxb[4];    tmp[5]=rxb[5];    tmp[6]=rxb[6];
@@ -2620,6 +2623,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
       osi_WrStrLn("", 1ul);
    }
 
+   frno=sec+min*60+hr*3600+day*86400;
    printf("%s[%i][%04i-%02i-%02i %02i:%02i:%02i]: La:%f, Lo:%f, Alt:%5.0f vH:%5.2f vV:%5.2f D:%3.1f T:%4.2f T1:%4.2f Vcc:%4.2f %6.3fMHz\r\n",id,frno,yr,mon,day,hr,min,sec,lat/1.7453292519943E-2,lon/1.7453292519943E-2,alt,vH,vV,Dir,T,T1,Vcc,frq);
 
 
@@ -3645,7 +3649,7 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     long0=(double)getint32r(rxb,rxb_len,offs+7UL)*0.000001; //claculate long in DDD.DDDDDD
     heig=(double)getint32r(rxb,rxb_len,offs+11UL)*.01;      //height in m
 
-/*
+
     for (i = 0; i < 4; i++)  bytes[i] = rxb[offs+15UL+ i];
     timegp = 0;
     for (i = 0; i < 4; i++)  timegp |= bytes[i] << (8*(3-i));
@@ -3653,9 +3657,8 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     for (i = 0; i < 4; i++)  bytes[i] = rxb[offs+19UL + i];
     dategp = 0;
     for (i = 0; i < 4; i++)  dategp |= bytes[i] << (8*(3-i));
-*/
-//    gpstime=(int32_t)(((timegp%100000)/1000.0)+(timegp%10000000)/100000*60+3600*timegp/10000000)+86382UL;
-    
+
+gpstime=(int32_t)(((timegp%100000)/1000.0)+ (timegp%10000000)/100000*60+ 3600*timegp/10000000) +86400* dategp%100;    
 
 /*
  fprintf(stdout, " %02d-%02d-%02d", datum.date/10000, (datum.date%10000)/100, datum.date%100);
@@ -3723,9 +3726,9 @@ static void decodepils(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
         	gpstime, 0.0, pc->name, 9ul, 0UL, pgoodsat, usercall,
                 11ul, 0UL, 0UL,0, sondeaprs_nofilter,"PilS",5,0);
       
-      store_sonde_db( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
-      store_sonde_rs( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0,usercall);
-      if(saveLog) save_Slog( pc->name,0,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
+      store_sonde_db( pc->name,gpstime,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
+      store_sonde_rs( pc->name,gpstime,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0,usercall);
+      if(saveLog) save_Slog( pc->name,gpstime,lat,long0,heig,speed,dir,climb,8,0,0,0,0,0.0,frq,0,0,0,0);
 
       pc->framesent = 1;
    }
