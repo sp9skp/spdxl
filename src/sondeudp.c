@@ -3425,13 +3425,15 @@ int dat_out(uint8_t *dat_bits,uint32_t m) {
 	    ret=-2;						// dane niepewne, więc oznaczamy jako bledne (z jednej ramki, nikomu korona nie spadnie a i tak czekamy na symbol sondy)
 	}
 
-	if(chan[m].dfm6.newalt<1 || chan[m].dfm6.newalt >50000 ||  	// gdy za duży błąd z usrednionych danych
-	    (fabs(chan[m].dfm6.prevlat-chan[m].dfm6.newlat)>0.1)||
-    	    (fabs(chan[m].dfm6.prevlon-chan[m].dfm6.newlon)>0.1)||
-    	    (abs(chan[m].dfm6.prevalt-chan[m].dfm6.newalt)>500))
-	  ret=-2;							// dane bledne
-	else
-	  ret = fr_id;
+        if(chan[m].dfm6.newalt<1 || chan[m].dfm6.newalt >40000 ||       // gdy za duży błąd z usrednionych danych
+            (fabs(chan[m].dfm6.prevlat-chan[m].dfm6.newlat)>0.05)||
+            (fabs(chan[m].dfm6.prevlon-chan[m].dfm6.newlon)>0.05)||
+            (abs(chan[m].dfm6.prevalt-chan[m].dfm6.newalt)>500)){
+          ret=-2;                                                       // dane bledne
+          chan[m].dfm6.sonde_typ = 0;
+        }
+        else
+          ret = fr_id;
 
 	chan[m].dfm6.prevlat = (chan[m].dfm6.newlat + chan[m].dfm6.lat)/2;	// usrednianie poprzednich i obecnych danych
 	chan[m].dfm6.prevlon = (chan[m].dfm6.newlon + chan[m].dfm6.lon)/2;
