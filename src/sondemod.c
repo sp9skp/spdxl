@@ -9,7 +9,7 @@
 
 
 #define DBS_SIZE 100
-#define SEND_INT 5
+#define SEND_INT 1
 
 #define BUFLEN 256
 #define PORT 9930
