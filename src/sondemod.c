@@ -2502,6 +2502,8 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
                 sondeaprs_nofilter,"C34",4,0);
             anonym2->lastsent = systime;
 	    //SKP
+	    int tc=3;
+            if(anonym2->name[2]=='5') tc=5;
             store_sonde_db(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0);
             store_sonde_rs(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0,usercall);
 	    if(saveLog) save_Slog(anonym2->name,0,exlat,exlon,anonym2->alt,anonym2->speed,anonym2->dir,anonym2->clmb,3,2,0,0.0,0,0,frq,0,0,0,0);
