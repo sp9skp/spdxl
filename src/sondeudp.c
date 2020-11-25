@@ -3644,7 +3644,7 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
             chan[m].dfm6.sonde_typ=dfm6typ;
 
             if(chan[m].dfm6.SNT!=0 && chan[m].dfm6.SNL!=0 && chan[m].dfm6.SNH!=0)
-                { chan[m].dfm6.SN6=chan[m].dfm6.SNH | chan[m].dfm6.SNL; sprintf(chan[m].dfm6.id,"D%1X%06u", dfm6typ,chan[m].dfm6.SN6);}
+                { chan[m].dfm6.SN6=chan[m].dfm6.SNH | chan[m].dfm6.SNL; sprintf(chan[m].dfm6.id,"D%1X%08u", dfm6typ,chan[m].dfm6.SN6);}
             else{chan[m].dfm6.id[0]=0; chan[m].dfm6.SN6=0;}
         }
     }
