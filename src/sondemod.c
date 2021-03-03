@@ -12,8 +12,7 @@
 #define SEND_INT 2
 
 #define BUFLEN 256
-#define PORT 9930  //pub
-//#define PORT 9937  //prv
+#define PORT 9930  
 
 
 #define X2C_int32
@@ -859,6 +858,17 @@ static void Parms(void)
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             sendquick = cnum;
+         }
+         else if (h[1U]=='t') osi_NextArg(sondeaprs_commentfn, 1025ul);
+         else if (h[1U]=='m' || h[1U]=='r') {
+         }
+         else if (h[1U]=='w') {
+         }
+         else if (h[1U]=='b') {
+         }
+         else if (h[1U]=='B') {
+         }
+         else if (h[1U]=='A') {
          }
          else if (h[1U]=='I') {
             osi_NextArg(mycall, 100ul);
