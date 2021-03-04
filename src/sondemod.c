@@ -861,14 +861,19 @@ static void Parms(void)
          }
          else if (h[1U]=='t') osi_NextArg(sondeaprs_commentfn, 1025ul);
          else if (h[1U]=='m' || h[1U]=='r') {
+	    osi_NextArg(h, 1024ul);
          }
          else if (h[1U]=='w') {
+	    osi_NextArg(h, 1024ul);
          }
          else if (h[1U]=='b') {
+	    osi_NextArg(h, 1024ul);
          }
          else if (h[1U]=='B') {
+	    osi_NextArg(h, 1024ul);
          }
          else if (h[1U]=='A') {
+	    osi_NextArg(h, 1024ul);
          }
          else if (h[1U]=='I') {
             osi_NextArg(mycall, 100ul);
