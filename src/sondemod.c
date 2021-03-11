@@ -907,7 +907,7 @@ static void Parms(void)
             saveLog=1;
          }
          else if (h[1U]=='D') {
-            disSKP=1;
+            disSKP=0;
          }
 
          else if (h[1U]=='v') sondeaprs_verb = 1;
