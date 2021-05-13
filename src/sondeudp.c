@@ -2054,6 +2054,8 @@ static void decodeframe10(uint32_t m)
    //char s[201+6];
    char s[400];
     float fq555;
+    char typ=0;
+
    struct M10 * anonym;
    struct CHAN * anonym0; /* call if set */
    { /* with */
@@ -2061,8 +2063,8 @@ static void decodeframe10(uint32_t m)
       cs = (uint32_t)crcm10(99L, anonym->rxbuf, 101ul);
       if (cs==m10card(anonym->rxbuf, 101ul, 99L, 2L)) {
          /* crc ok */
-	 if((unsigned char)anonym->rxbuf[1]==0x9f && (unsigned char)anonym->rxbuf[2]==0x20){
-	
+	 if(((unsigned char)anonym->rxbuf[1]==0x8f || (unsigned char)anonym->rxbuf[1]==0x9f) && (unsigned char)anonym->rxbuf[2]==0x20){
+	     if((unsigned char)anonym->rxbuf[1]==0x8f) typ=3;
     	     tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
     	     week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
     	     time0 = tow/1000UL+week*604800UL+315964800UL;
@@ -2094,6 +2096,7 @@ static void decodeframe10(uint32_t m)
              if (dir<0.0) dir = 360.0+dir;
 	 }
 	 else if((unsigned char)anonym->rxbuf[1]==0xAF && (unsigned char)anonym->rxbuf[2]==0x02){
+	     typ=2;
 	     int tim=m10card(anonym->rxbuf, 101ul, 0x15, 3L);
 	     int dat=m10card(anonym->rxbuf, 101ul, 0x18, 3L);
     	     time0 = 2678400*(dat%10000)/100 +86400*dat/10000 +3600*(tim/10000)+60*((tim%10000)/100)+ ((tim%100)/1); //tow/1000UL+week*604800UL+315964800UL;
@@ -2182,7 +2185,7 @@ static void decodeframe10(uint32_t m)
         s[3U] = (char)(anonym0->mycallc&255UL);
         if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
         else s[4U] = '\020';
-	s[5]=',';
+	s[5]=','+typ;
 	for(i=0;i<6;i++)			//qrg
 	    s[i+6]=chan[m].freq[i];
 	s[12]=',';
@@ -2192,7 +2195,6 @@ static void decodeframe10(uint32_t m)
 	if( lat>-90.0 && lat<90.0 && lon>=-180.0 && lon<=180.0 && alt>0.0 && alt<45000.0 && dir>=0 && dir<361 && v>=0 && v<600 && 
 		vv>-200 && vv<200 && vbat>0 && vbat<10 && temp1>-270.0 && temp1<100.0 && temp2>-270.0 && temp2<100.0){
 	    sprintf(s,"%s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f,%06.0f\n",s,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2,fq555);
-//	    printf("\nM10T:%s",s);	
 	    alludp(chan[m].udptx, 105, s, 105);
 	}
       }
@@ -2235,17 +2237,26 @@ static void demodbyte10(uint32_t m, char d)
          if ((anonym->synword&16777215UL)==6594336UL) {
             anonym->rxp = 3UL;
             anonym->rxb = 0UL;
-            anonym->rxbuf[0U] = 'd';
-            anonym->rxbuf[1U] = '\237';
-            anonym->rxbuf[2U] = ' ';
+            anonym->rxbuf[0U] = 0x64;
+            anonym->rxbuf[1U] = 0x9f;
+            anonym->rxbuf[2U] = 0x20;
          }
-         if ((anonym->synword&16777215UL)==6598402UL) {
+         if ((anonym->synword&16777215UL)==6598402UL) {	//gtop
             anonym->rxp = 3UL;
             anonym->rxb = 0UL;
             anonym->rxbuf[0U] = 0x64;
             anonym->rxbuf[1U] = 0xAF;
             anonym->rxbuf[2U] = 0x02;
          }
+	if ((anonym->synword&16777215UL)==6590240UL) { //M2K2
+            anonym->rxp = 3UL;
+            anonym->rxb = 0UL;
+            anonym->rxbuf[0U] = 0x64;
+            anonym->rxbuf[1U] = 0x8F;
+            anonym->rxbuf[2U] = 0x20;
+         }
+
+
       }
       else {
          /*WrStr(" -syn- "); */
