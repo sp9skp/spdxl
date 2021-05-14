@@ -641,7 +641,7 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
     	    strcpy(Pass,dbPass);
 	str[0]=0;
 
-        sprintf( UDPbuf, "S0;2;0;0;%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
+        sprintf( UDPbuf, "S0;1;4;0;%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
                                 name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,vbat,t1,t2,hum,mycall);
 
     	//wylicznie hasha
@@ -3187,6 +3187,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
          /*             WrStrLn("7D frame"); */
          /*             WrStrLn("7B frame"); */
     //     if (pc) {
+	    if(p==261) typs=ST_RS41SGM;
             posrs41(rxb, rxb_len, p, &lat, &long0, &heig, &speed, &dir, &climb);
             pc->hp = altToPres(heig);
                 /* make hPa out of gps alt for ozone */
