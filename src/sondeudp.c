@@ -2031,8 +2031,7 @@ float get_TLC555freq(uint32_t m) {
 }
 
 
-static void decodeframe10(uint32_t m)
-{
+static void decodeframe10(uint32_t m){
    uint32_t week;
    uint32_t tow;
    uint32_t cs;
@@ -2054,7 +2053,7 @@ static void decodeframe10(uint32_t m)
    //char s[201+6];
    char s[400];
     float fq555;
-    char typ=0;
+    char typ=1;
 
    struct M10 * anonym;
    struct CHAN * anonym0; /* call if set */
