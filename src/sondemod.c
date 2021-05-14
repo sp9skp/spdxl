@@ -3325,12 +3325,13 @@ static void decodem10(char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t frompo
    float vbat,temp1,temp2;
    char to[1200];
    uint32_t time0;
-   int typ;
-
-    switch((unsigned char)(rxb[5]-',')){
-	case 0: typ=ST_M10; break;
-	case 1: typ=ST_M10GT; break;
-	case 2: typ=ST_M2K2; break;
+   int typ,typt;
+    typt=(unsigned char)rxb[5]-',';
+    
+    switch(typt){
+	case 1: typ=ST_M10;   break;
+	case 2: typ=ST_M10GT; break;
+	case 3: typ=ST_M2K2;  break;
     }
     rxb[5]=',';
 
