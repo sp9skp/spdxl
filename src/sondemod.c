@@ -3256,7 +3256,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
          break;
       }
 */
-      if (typ=='v') {typs=ST_RS41SGM; break;}
+      if (typ=='v') break;
       p += len;
    }
    if (sondeaprs_verb) osi_WrStrLn("", 1ul);
