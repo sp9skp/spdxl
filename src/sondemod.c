@@ -536,7 +536,7 @@ int read_csv()
 			dBs[cnt].lon=atof(txt);
 			break;
                     case 3:
-			dBs[cnt].alt=atol(txt);
+			dBs[cnt].alt=strtoul(txt, NULL, 10);
 			break;
                     case 4:
 			dBs[cnt].speed=atof(txt);
@@ -551,7 +551,7 @@ int read_csv()
 			dBs[cnt].frq=atof(txt);
 			break;
                     case 8:
-			dBs[cnt].time=atol(txt);
+			dBs[cnt].time=strtoul(txt, NULL, 10);;
 			break;
                 }
 		i++;
@@ -3369,7 +3369,7 @@ static void decodem10(char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t frompo
 
         tmp = strtok(NULL, ",");        //time
          if(isNDig(tmp)) return;
-         time0=atol(tmp);
+         time0=strtoul(tmp, NULL, 10);;
 	 frameno=time0;
 
         tmp = strtok(NULL, ",");        //lat
@@ -3545,7 +3545,7 @@ static void decodem20(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
          strcpy(nam,tmp);
         tmp = strtok(NULL, ",");        //time
          if(isNDig(tmp)) return;
-         time0=atol(tmp);
+         time0=strtoul(tmp, NULL, 10);
 	 frameno=time0;
         tmp = strtok(NULL, ",");        //lat
          if(isNDig(tmp)) return;
