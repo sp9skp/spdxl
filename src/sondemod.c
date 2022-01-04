@@ -44,25 +44,7 @@
 #ifndef sondeaprs_H_
 #include "sondeaprs.h"
 #endif
-
-#define ST_M10				1
-#define ST_M20				2
-#define ST_C34				3
-#define ST_RS41				4
-#define ST_C50				5
-#define ST_DFM6				6
-#define ST_DFM9				7
-#define ST_PIL				8
-#define ST_RS92				9
-#define ST_M10GT			10
-#define ST_M2K2				11
-#define ST_RS41SGM			12
-//#define ST_RS41SGP			13
-
-#define ST_DFM15			15
-#define ST_DFM17			17
-
-#define ST_MP3				20
+#include "sondetypes.h"
 
 
 
@@ -98,6 +80,7 @@
 
 #define sondemod_ASYNBITS 10
 
+
 static char sondemod_CALIBFRAME = 'e';
 
 static char sondemod_GPSFRAME = 'g';
@@ -125,7 +108,9 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_FASTALM 4
 /* reread almanach if old */
 
-uint32_t save2csv, disSKP=0,saveLog=0;
+uint32_t save2csv, saveLog=0;
+
+char SKPip[50];
 
 typedef char FILENAME[1024];
 
@@ -621,10 +606,33 @@ unsigned int passAprs(char *pas){
 }
 
 
-void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
+int getSKP(){
+
+    if(h2ip("snd.skp.wodzislaw.pl",SKPip)){
+            fprintf(stderr,"\r\nCan't resolve DNS address\r\n");
+            SKPip[0]=0;
+            return 0;
+    }
+
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
+        printf("err: socket\n");
+
+    bzero(&serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    if (inet_aton(SKPip, &serv_addr.sin_addr)==0)
+    {
+        fprintf(stderr, "inet_aton() failed\n");
+        return(0);
+    }
+    return(1);
+}
+
+
+void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
     char str[1024];
     char hash[40];
-
+    int ret;
     char ToHash[300];
     char Pass[20];
     char dp=strlen(dbPass);
@@ -641,7 +649,7 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
     	    strcpy(Pass,dbPass);
 	str[0]=0;
 
-        sprintf( UDPbuf, "S0;1;4;0;%s;%lf;%lf;%5.1lf;%u;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
+        sprintf( UDPbuf, "S0;1;5;0;%s;%lf;%lf;%5.1lf;%lu;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
                                 name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,vbat,t1,t2,hum,mycall);
 
     	//wylicznie hasha
@@ -653,6 +661,9 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
     	strcat(UDPbuf,";");
     	strcat(UDPbuf,hash);
 
+	if(SKPip[0]==0)
+	    ret=getSKP();
+	if(ret==0) return;
 
         if (sendto(sockfd, UDPbuf, BUFLEN, 0, (struct sockaddr*)&serv_addr, slen)==-1)
             printf("err: sendto()");
@@ -664,7 +675,7 @@ void  saveMysql( char *name,unsigned int frameno, double lat, double lon, double
 }
 
 
-void save_Slog( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
+void save_Slog( char *name,uint32_t frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
 
     int i,newS=1;
     time_t minTime=time(NULL),difftime,lTime=time(NULL);
@@ -685,7 +696,7 @@ void save_Slog( char *name,unsigned int frameno, double lat, double lon, double 
 //    if(saveLog){
         fi = fopen(sf, "a+");
 	if (fi){
-    	    fprintf(fi,"%s;%s;%05u;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.2f;%i,%0.3f;%i;%0.1f;%0.3f;%02.1f;%03.1f;%03.1f;%03.1f;\n",
+    	    fprintf(fi,"%s;%s;%05lu;%0.5f;%0.5f;%0.0f;%0.2f;%0.2f;%0.2f;%i,%0.3f;%i;%0.1f;%0.3f;%02.1f;%03.1f;%03.1f;%03.1f;\n",
 		s,name,frameno,X2C_DIVL(lat,1.7453292519943E-2),X2C_DIVL(lon,1.7453292519943E-2),alt,speed,dir,climb, typ,ozon,aux,press,frq,vbat,t1,t2,hum);
 	    fclose(fi);
         }
@@ -696,7 +707,7 @@ void save_Slog( char *name,unsigned int frameno, double lat, double lon, double 
 
 }
 
-int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
+int store_sonde_db( char *name,uint32_t frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
 
     int i,newS=1;
     time_t minTime=time(NULL),difftime,lTime=time(NULL);
@@ -737,13 +748,13 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
     dBs[i].hum=hum;
 
     difftime=minTime-dBs[i].sendtime;
-    printf("***TIME %lu ALT:%1.0f NEW:%i\n",difftime,alt,newS);
-    if(disSKP==0){
-	if(alt<3000 || difftime>SEND_INT){
-	    saveMysql( name, frameno, dBs[i].lat, dBs[i].lon, alt, speed, dir, climb, typ, bk, swv, ozon, aux, press, frq,vbat,t1,t2,hum);
-	    dBs[i].sendtime=time(NULL);
-	}
+    //printf("***TIME %lu ALT:%1.0f NEW:%i\n",difftime,alt,newS);
+    
+    if(alt<3000 || difftime>SEND_INT){
+        saveMysql( name, frameno, dBs[i].lat, dBs[i].lon, alt, speed, dir, climb, typ, bk, swv, ozon, aux, press, frq,vbat,t1,t2,hum);
+        dBs[i].sendtime=time(NULL);
     }
+    
     if(save2csv) save_csv();
 
 
@@ -753,7 +764,7 @@ int store_sonde_db( char *name,unsigned int frameno, double lat, double lon, dou
 //-SKP
 
 //SQ6QV
-int store_sonde_rs(char *name,unsigned int frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum, char * src_call){
+int store_sonde_rs(char *name,uint32_t frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum, char * src_call){
 
 FILE * band_lock;
 
@@ -928,7 +939,7 @@ static void Parms(void)
             saveLog=1;
          }
          else if (h[1U]=='D') {
-            disSKP=0;
+            
          }
 
          else if (h[1U]=='v') sondeaprs_verb = 1;
@@ -1581,8 +1592,7 @@ static void docalib(const char sf[], uint32_t sf_len,
    } /* end for */
    if (i<=objname_len-1) objname0[i] = 0;
    if (new0) readcontext(cont, objname0, objname_len);
-   *frameno = (uint32_t)(uint8_t)sf[0UL]+(uint32_t)(uint8_t)
-                sf[1UL]*256UL;
+   *frameno = (uint32_t)(uint8_t)sf[0UL]+(uint32_t)(uint8_t)sf[1UL]*256UL;
    if (sondeaprs_verb) {
       if (new0) osi_WrStr("new ", 5ul);
       osic_WrINT32(*frameno, 1UL); /* frame no */
@@ -2791,6 +2801,17 @@ static int32_t getint16(const char frame[], uint32_t frame_len,
    return (int32_t)n;
 } /* end getint16() */
 
+static int32_t getuint16(const char frame[], uint32_t frame_len,
+                uint32_t p)
+{
+   uint32_t n;
+   n = (uint32_t)(uint8_t)frame[p]+256UL*(uint32_t)(uint8_t)
+                frame[p+1UL];
+   return (int32_t)n;
+} /* end getint16() */
+
+
+
 static int32_t getint24(const char frame[], uint32_t frame_len, uint32_t p)
 {
    uint32_t n;
@@ -3064,7 +3085,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             aprsstr_Assign(pc->name, 9ul, nam, 9ul);
             if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
          }
-         frameno = (uint32_t)getint16(rxb, rxb_len, p);
+         frameno = (uint32_t)getuint16(rxb, rxb_len, p);
 	 
 	
          if (frameno>pc->framenum) {
@@ -4146,6 +4167,45 @@ static void decodemp3(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
 } /* end decodemp3() */
 
 
+static void decodeskpp(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t fromport){
+
+    char ToHash[300];
+    char Pass[20];
+    char dp=strlen(dbPass);
+    char cp=strlen(mycall);
+    double dlat,dlon;
+    char str[100];
+
+    if((dp>4)||(cp>3)){
+
+        if(dp<4){      
+            sprintf(str,"%u",passAprs(mycall));
+            strcpy(Pass,str);
+        }
+        else
+            strcpy(Pass,dbPass);
+        str[0]=0;
+
+        sprintf(UDPbuf, "S3;3;3;0;%u,%s;",rxb_len,mycall);
+	strncat(UDPbuf,rxb,rxb_len);
+
+        strcpy(ToHash,UDPbuf);
+        strcat(ToHash,Pass);
+        char *hash = str2md5(ToHash, strlen(ToHash));
+
+        strcat(UDPbuf,";");
+        strcat(UDPbuf,hash);
+
+        if (sendto(sockfd, UDPbuf, BUFLEN, 0, (struct sockaddr*)&serv_addr, slen)==-1)
+            printf("err: sendto()");
+        else
+            printf("SKPP send to DB\n");
+    }
+
+
+}
+
+
 
 static void udprx(void)
 {
@@ -4164,6 +4224,8 @@ static void udprx(void)
       case 100: decodem20(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
       case 61:  decodepils(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport); break;
       case 115: decodemp3(chan[sondemod_LEFT].rxbuf, 115ul, ip, fromport); break;
+      case SKPFRL: decodeskpp(chan[sondemod_LEFT].rxbuf, 115ul, ip, fromport); break;
+
       default: fprintf(stderr,"unsupported frame len %d\n", len);
    }
 } 
@@ -4172,29 +4234,9 @@ static void udprx(void)
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   char ip[50],i;
-   
-   if(disSKP==0){
-	if(h2ip("skp.wodzislaw.pl",ip)){
-	    fprintf(stderr,"\r\nCan't resolve DNS address using 194.140.233.120\r\n");
-	    sprintf(ip,"194.140.233.120");
-	    //return 0;
-	}
-   }
+   char i;
 
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
-        printf("err: socket\n");
-
-    bzero(&serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-    if (inet_aton(ip, &serv_addr.sin_addr)==0)
-    {
-        fprintf(stderr, "inet_aton() failed\n");
-        exit(1);
-    }
-
-
+   SKPip[0]=0;
 
    for(i=0;i<DBS_SIZE;i++) memset(&dBs[i],0,sizeof(struct DBS));
 

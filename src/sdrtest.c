@@ -25,6 +25,7 @@
 #include "sdr.h"
 #endif
 #include <stdio.h>
+#include "sondetypes.h"
 /* test rtl_tcp iq fm demodulator by OE5DXL */
 #define sdrtest_MAXCHANNELS 64
 
@@ -53,6 +54,7 @@ struct FREQTAB {
    int32_t afc;
    int32_t shiftf;
    char modulation;
+   int st;
 };
 
 struct STICKPARM;
@@ -535,7 +537,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          rxx[i].agc = freq[i].agc;
          rxx[i].modulation = freq[i].modulation;
 	 rxx[i].shiftf=freq[i].shiftf;
-
+	 rxx[i].st=freq[i].st;
          ++i;
       }
       prx[i] = 0;
@@ -587,7 +589,7 @@ static void updateChanT(){
 
       rxx[i].afckhz=0;						// reset AFC
 
-      sprintf(tmp,"%02i%06li",i+1,(long int)(qrg));
+      sprintf(tmp,"%02i%06li%c",i+1,(long int)(qrg),65+rxx[i].st);
       tmp1[0]=tmp[0];
       tmp1[1]=' ';
       tmp1[2]=tmp[1];
@@ -606,7 +608,10 @@ static void updateChanT(){
       tmp1[15]=' ';
       tmp1[16]=tmp[8];
       tmp1[17]=' ';
-      tmp1[18]=0;
+      tmp1[18]=tmp[9];
+      tmp1[19]=' ';
+      tmp1[20]=0;
+
       printf("DEB:%s\n",tmp);
       strcat(sndbufft,tmp1);
       ++i;
@@ -646,6 +651,7 @@ int file_is_modified(const char *path) {
 
 static void rdconfig(void)
 {
+   uint32_t fmn=999999999,fmx=0;
    int32_t len;
    int32_t fd0;
    uint32_t sq;
@@ -657,6 +663,7 @@ static void rdconfig(void)
    uint32_t i;
    int32_t ssbsh;
    int32_t m;
+   uint32_t st;
    float sqcor;
    double x;
    char ok0;
@@ -688,9 +695,8 @@ static void rdconfig(void)
                ++i;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &n, &ok0);
-               if (n>255UL || !ok0) {
+               if (n>255UL || !ok0) 
                   printf("wrong parameter number\n");
-               }
                else {
                   skip(li, 256ul, &i);
                   int0(li, 256ul, &i, &m, &ok0);
@@ -723,9 +729,7 @@ static void rdconfig(void)
                }
                skip(li, 256ul, &i);
                cardi(li, 256ul, &i, &n, &ok0);
-               if (!ok0) {
-		    n=0;
-               }
+               if (!ok0)  n=0;
 
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &sq, &ok0);
@@ -744,6 +748,11 @@ static void rdconfig(void)
                }
                if (wid>1000000UL) wid = 1000000UL;
 
+               skip(li, 256ul, &i);
+               card(li, 256ul, &i, &st, &ok0);
+               if (!ok0) {
+		    st=0;
+	       }
 
                if (freqc>63UL) printf("freq table full\n");
                else {
@@ -753,15 +762,17 @@ static void rdconfig(void)
                      x = 0.0;
                   }
                   x = x*1.E+6+(double)ssbsh;
-
                   freq[freqc].hz = (uint32_t)X2C_TRUNCC(x+0.5,0UL, 0xFFFFFFFF);
                   freq[freqc].afc = m;
 		  freq[freqc].shiftf = n;
                   freq[freqc].width = wid;
                   freq[freqc].agc = lpp;
+		  freq[freqc].st=st;
 
-		 printf ("%u AFC:%u, SH:%i, WI:%u\r\n",freq[freqc].hz,freq[freqc].afc,freq[freqc].shiftf,freq[freqc].width);
-
+		  if(freq[freqc].hz>fmx)fmx=freq[freqc].hz;
+		  if(freq[freqc].hz<fmn)fmn=freq[freqc].hz;
+		
+		 printf ("%u AFC:%u, SH:%i, WI:%u AGC:%i, Stype:%i\r\n",freq[freqc].hz,freq[freqc].afc,freq[freqc].shiftf,freq[freqc].width,freq[freqc].agc,freq[freqc].st);
 		 sqcor=32+(192000/(samphz/1.14)-13.68);
 
                   squelchs[freqc].lev = X2C_DIVR((float)sq*sqcor,200.0f);
@@ -778,6 +789,16 @@ static void rdconfig(void)
          ++p;
       }
       osic_Close(fd0);
+
+      if(fmx>403150000 && fmn<403150000){
+	    freq[freqc].hz = (uint32_t)X2C_TRUNCC(403150000+0.5,0UL, 0xFFFFFFFF);
+            freq[freqc].afc = 20;
+            freq[freqc].shiftf = 0;
+            freq[freqc].width = 24000;
+            freq[freqc].agc = 0;
+	    freq[freqc].st=ST_SKP;
+	    ++freqc;
+      }
       
    }
    else printf("config file not readable\n");

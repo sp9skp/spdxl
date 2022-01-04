@@ -83,6 +83,7 @@ struct sdr_RX {
    float ssbfgq;
    float ssbfg;
    float agcspeed;
+   int st;
 };
 
 typedef struct sdr_RX * sdr_pRX;

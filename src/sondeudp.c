@@ -36,6 +36,7 @@
 #include <stdio.h>
 
 #include <time.h>
+#include "sondetypes.h"
 
 /* demodulate RS92 sonde (2400bit/s manchester)
    and SRS-C34 (2400Bd AFSK 2000/3800Hz
@@ -106,7 +107,6 @@ static char sondeudp_DATAFRAME = 'i';
 /* M20 framelen */
 #define sondeudp_M10SYN 0x4520
 /* M20 sync */
-
 
 
 /*
@@ -480,6 +480,28 @@ struct IMET {
 
 };
 
+struct SKPP;
+struct SKPP {
+   char enabled;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t manchestd;
+   float bitlev;
+   float noise;
+   float lastu;
+   char cbit;
+   char oldd;
+   char plld;
+   char lastmanch;
+   char txok;
+   uint32_t rxb;
+   uint32_t rxp;
+   char rxbuf[200];
+   AFIRTAB afirtab;
+   uint32_t synword;
+   uint32_t demodbaud;
+   uint32_t configbaud;
+};
 
 
 
@@ -506,10 +528,12 @@ struct CHAN {
    struct M20 m20;
    struct IMET imet;
    struct MP3 mp3;
+   struct SKPP skpp;
 
    char nr;
    char freq[10];
    char pfreq[10];
+   int st;
 
 };
 
@@ -851,6 +875,8 @@ static void Config(void)
    struct M20 * anonym7;
    struct IMET * anonym8;
    struct MP3 * anonym9;
+   struct MP3 * anonym10;
+   struct SKPP * anonym11;
 
    for (c = 0UL; c<=63UL; c++) {
       { /* with */
@@ -1001,6 +1027,20 @@ static void Config(void)
          anonym2->rxp = 0UL;
          anonym2->rxbitc = 0UL;
       }
+      { /* with */
+         struct SKPP * anonym11 = &chan[c].skpp;
+         anonym11->configbaud = 9600UL;
+         anonym11->demodbaud = (2UL*anonym11->configbaud*65536UL)/adcrate;
+         initafir(anonym11->afirtab, 0UL, 5200UL, X2C_DIVR((float)chan[c].configequalizer,100.0f)); //5200
+         anonym11->baudfine = 0L;
+         anonym11->noise = 0.0f;
+         anonym11->bitlev = 0.0f;
+         anonym11->cbit = 0;
+         anonym11->rxp = 101UL; /* out of fram, wait for sync */
+         anonym11->manchestd = 0L;
+         anonym11->txok = 0;
+      }
+
    } /* end for */
 } /* end Config() */
 
@@ -1032,6 +1072,7 @@ static void Parms(void)
    struct M20 * anonym7;
    struct IMET * anonym8;
    struct MP3 * anonym9;
+   struct SKPP * anonym11;
    err = 0;
    abortonsounderr = 0;
    adcrate = 22050UL;
@@ -1126,6 +1167,11 @@ static void Parms(void)
          anonym3->configequalizer = 0L;
          anonym3->udptx = 0;
          anonym3->mycallc = 0UL;
+      }
+      { /* with */
+         struct SKPP * anonym11 = &chan[channel].skpp;
+         anonym11->enabled = 1;
+         anonym11->pllshift = 4096L;
       }
 
    } /* end for */
@@ -1618,9 +1664,9 @@ static void decodeframe92(uint32_t m)
    { /* with */
       struct CHAN * anonym = &chan[m];
       if (anonym->mycallc>0UL) {
-         chan[m].r92.rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
-         chan[m].r92.rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
-         chan[m].r92.rxbuf[2U] = (char)(anonym->mycallc/256UL&255UL);
+         chan[m].r92.rxbuf[0U] = (char)(anonym->mycallc>>24);
+         chan[m].r92.rxbuf[1U] = (char)(anonym->mycallc>>16&255UL);
+         chan[m].r92.rxbuf[2U] = (char)(anonym->mycallc>>8&255UL);
          chan[m].r92.rxbuf[3U] = (char)(anonym->mycallc&255UL);
          chan[m].r92.rxbuf[4U] = anonym->myssid;
       }
@@ -1699,9 +1745,9 @@ static void sendrs41(uint32_t m)
    { /* with */
       struct CHAN * anonym = &chan[m];
       if (anonym->mycallc>0UL) {
-         chan[m].r41.rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
-         chan[m].r41.rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
-         chan[m].r41.rxbuf[2U] = (char)(anonym->mycallc/256UL&255UL);
+         chan[m].r41.rxbuf[0U] = (char)(anonym->mycallc>>24);
+         chan[m].r41.rxbuf[1U] = (char)(anonym->mycallc>>16&255UL);
+         chan[m].r41.rxbuf[2U] = (char)(anonym->mycallc>>8&255UL);
          chan[m].r41.rxbuf[3U] = (char)(anonym->mycallc&255UL);
          chan[m].r41.rxbuf[4U] = anonym->myssid;
          chan[m].r41.rxbuf[5U] = 0;
@@ -2178,9 +2224,9 @@ static void decodeframe10(uint32_t m){
 	    osi_WrStr("C ", 3ul);
          }
 	struct CHAN * anonym0 = &chan[m];
-    	s[0U] = (char)(anonym0->mycallc/16777216UL);
-        s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
-        s[2U] = (char)(anonym0->mycallc/256UL&255UL);
+    	s[0U] = (char)(anonym0->mycallc>>24);
+        s[1U] = (char)(anonym0->mycallc>>16&255UL);
+        s[2U] = (char)(anonym0->mycallc>>8&255UL);
         s[3U] = (char)(anonym0->mycallc&255UL);
         if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
         else s[4U] = '\020';
@@ -2516,10 +2562,12 @@ static void decodeframe20(uint32_t m)
 	    }
 */
 	    unsigned long bSN;
-	    unsigned long sn1,sn2,sn3;
+	    unsigned long sn1,sn2,sn3,sn1a;
 	    bSN=(anonym->rxbuf[pos_SN20]<<16) & 0xff0000 | (anonym->rxbuf[pos_SN20+1]<<8) &0xff00 | (anonym->rxbuf[pos_SN20+2]) & 0xff;
-	    sn1 = (bSN>>17 & 0x0f)*100 + ((bSN>>22 &0x3) | (bSN>>19 &0x04));
-	    sn3 = ((bSN >>10)&0x3f) |  (bSN & 0x1f)<<6;
+	    sn1a =(bSN>>16)&0x7f;
+	    sn1=100*(int)(sn1a/12)+ sn1a%12+1;
+	    sn3 =((bSN>>5)&0x1f)<<11 | ((bSN >>10)&0x3f) |  (bSN & 0x1f)<<6;
+
 	    sprintf(ids,"%03u2%05u\n",sn1,sn3);
 	    ids[9U] = 0;
     
@@ -2551,9 +2599,9 @@ static void decodeframe20(uint32_t m)
 		osi_WrStr("C ", 3ul);
             }
 	    struct CHAN * anonym0 = &chan[m];
-    	    s[0U] = (char)(anonym0->mycallc/16777216UL);
-    	    s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
-    	    s[2U] = (char)(anonym0->mycallc/256UL&255UL);
+    	    s[0U] = (char)(anonym0->mycallc>>24);
+    	    s[1U] = (char)(anonym0->mycallc>>16&255UL);
+    	    s[2U] = (char)(anonym0->mycallc>>8&255UL);
     	    s[3U] = (char)(anonym0->mycallc&255UL);
     	    if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
     	    else s[4U] = '\020';
@@ -2690,7 +2738,127 @@ static void demod20(float u, uint32_t m)
 
 /*---------------------- M20 */
 
+/*SKPP --------------------- */
 
+static void demodbyteSKPP(uint32_t m, char d)
+{
+
+uint32_t cs;
+
+   struct SKPP * anonym;
+   { /* with */
+      struct SKPP * anonym = &chan[m].skpp;
+      /*WrInt(ORD(d),1); Flush(); */
+      anonym->synword = anonym->synword*2UL+(uint32_t)d;
+      if (anonym->rxp>=70UL) {
+         if ((anonym->synword&0xfffffff)==0xAA534b50) {
+            anonym->rxp = 4UL;
+            anonym->rxb = 0UL;
+            anonym->rxbuf[0U] = 0xaa;
+            anonym->rxbuf[1U] = 0x53;
+	    anonym->rxbuf[2U] = 0x4b;
+	    anonym->rxbuf[3U] = 0x50;
+         }
+      }
+      else {
+         ++anonym->rxb;
+         if (anonym->rxb>=8UL) {
+            anonym->rxbuf[anonym->rxp] = (char)(anonym->synword&0xff);
+            anonym->rxb = 0UL;
+            ++anonym->rxp;
+            if (anonym->rxp==SKPFRL) 
+		cs = (uint32_t)crcm10(SKPFRL-2, anonym->rxbuf, SKPFRL);
+		if(cs==m10card(anonym->rxbuf, SKPFRL, SKPFRL-2, 2L))
+		    alludp(chan[m].udptx, SKPFRL, anonym->rxbuf, SKPFRL);
+         }
+      }
+   }
+}
+
+
+static void demodbitSKPP(uint32_t m, float u, float u0)
+{
+   char bit;
+   char d;
+   float ua;
+   struct SKPP * anonym;
+   /*IF manchestd>20000 THEN  */
+   /*WrInt(VAL(INTEGER, u), 8); Flush; */
+   d = u>=0.0f;
+   { /* with */
+      struct SKPP * anonym = &chan[m].skpp;
+      /*WrInt(manchestd DIV 256, 1); WrStr("("); WrInt(ORD(lastmanch),1);
+                WrInt(ORD(d),1);WrStr(")");  Flush(); */
+      /*WrInt(ORD(lastmanch<>d),1); Flush(); */
+      /*END; */
+      if (anonym->lastmanch==d) {
+         anonym->manchestd += (32767L-anonym->manchestd)/16L;
+      }
+      bit = d!=anonym->lastmanch;
+      if (anonym->manchestd>0L) {
+         demodbyteSKPP(m, bit);
+         /*quality*/
+         ua = (float)fabs(u)-anonym->bitlev;
+         anonym->bitlev = anonym->bitlev+ua*0.02f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.05f;
+      }
+      /*quality*/
+      anonym->lastmanch = d;
+      anonym->manchestd = -anonym->manchestd;
+   }
+} /* end demodbit10() */
+
+
+static void demodSKPP(float u, uint32_t m)
+{
+   char d;
+   struct SKPP * anonym;
+   /*
+     IF debfd>=0 THEN
+       ui:=VAL(INTEGER, u*0.002);
+       WrBin(debfd, ui, 2);
+     END;
+   */
+   { /* with */
+      struct SKPP * anonym = &chan[m].skpp;
+      d = u>=0.0f;
+      if (anonym->cbit) {
+         demodbitSKPP(m, u, anonym->lastu);
+         if (d!=anonym->oldd) {
+            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
+            else anonym->baudfine -= anonym->pllshift;
+            anonym->oldd = d;
+         }
+         anonym->lastu = u;
+      }
+      else anonym->plld = d;
+      anonym->cbit = !anonym->cbit;
+   }
+} 
+
+
+static void FskSKPP(uint32_t m)
+{
+   float ff;
+   int32_t lim;
+   struct SKPP * anonym;
+   { /* with */
+      struct SKPP * anonym = &chan[m].skpp;
+      lim = (int32_t)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demodSKPP(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+}
+
+/*--------------------SKPP */
 
 //-----------------------------------------------------------------------------------------------------
 //PILOTSONDE
@@ -2887,9 +3055,9 @@ static void sendpils(uint32_t m)
    { /* with */
       struct CHAN * anonym = &chan[m];
       if (anonym->mycallc>0UL) {
-         chan[m].pils.rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
-         chan[m].pils.rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
-         chan[m].pils.rxbuf[2U] = (char)(anonym->mycallc/256UL&255UL);
+         chan[m].pils.rxbuf[0U] = (char)(anonym->mycallc>>24);
+         chan[m].pils.rxbuf[1U] = (char)(anonym->mycallc>>16&255UL);
+         chan[m].pils.rxbuf[2U] = (char)(anonym->mycallc>>8&255UL);
          chan[m].pils.rxbuf[3U] = (char)(anonym->mycallc&255UL);
          chan[m].pils.rxbuf[4U] = anonym->myssid;
          chan[m].pils.rxbuf[5U] = 0;
@@ -3561,9 +3729,9 @@ static void sendmp3(uint32_t m)
    { /* with */
       struct CHAN * anonym = &chan[m];
       if (anonym->mycallc>0UL) {
-         chan[m].mp3.rxbuf[103U] = (char)(anonym->mycallc/16777216UL);
-         chan[m].mp3.rxbuf[104U] = (char)(anonym->mycallc/65536UL&255UL);
-         chan[m].mp3.rxbuf[105U] = (char)(anonym->mycallc/256UL&255UL);
+         chan[m].mp3.rxbuf[103U] = (char)(anonym->mycallc>>24);
+         chan[m].mp3.rxbuf[104U] = (char)(anonym->mycallc>>16&255UL);
+         chan[m].mp3.rxbuf[105U] = (char)(anonym->mycallc>>8&255UL);
          chan[m].mp3.rxbuf[106U] = (char)(anonym->mycallc&255UL);
          chan[m].mp3.rxbuf[107U] = anonym->myssid;
          chan[m].mp3.rxbuf[108U] = 0;
@@ -4486,8 +4654,6 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
 
     conf_id = bits2val(conf_bits, 4);
 
-    printf(" ID:%02i\n",conf_id);
-
     if (conf_id > 4 && bits2val(conf_bits+8, 4*5) == 0) nul_ch = bits2val(conf_bits, 8);
 
 
@@ -4695,9 +4861,9 @@ static char sendDFM(uint32_t m){
         tmp[16]=0;
         strcat(s,tmp);
 
-        tmp[0] = (char)(chan[m].mycallc/16777216UL);
-        tmp[1] = (char)(chan[m].mycallc/65536UL&255UL);
-        tmp[2] = (char)(chan[m].mycallc/256UL&255UL);
+        tmp[0] = (char)(chan[m].mycallc>>24);
+        tmp[1] = (char)(chan[m].mycallc>>16&255UL);
+        tmp[2] = (char)(chan[m].mycallc>>8&255UL);
         tmp[3] = (char)(chan[m].mycallc&255UL);
         if (chan[m].mycallc>0UL) tmp[4] = chan[m].myssid;
 	else tmp[4] = '\020';
@@ -5254,9 +5420,9 @@ static void demodframe34(uint32_t channel)
             s[9U] = 0;
             { /* with */
                struct CHAN * anonym0 = &chan[channel];
-               s[10U] = (char)(anonym0->mycallc/16777216UL);
-               s[11U] = (char)(anonym0->mycallc/65536UL&255UL);
-               s[12U] = (char)(anonym0->mycallc/256UL&255UL);
+               s[10U] = (char)(anonym0->mycallc>>24);
+               s[11U] = (char)(anonym0->mycallc>>16&255UL);
+               s[12U] = (char)(anonym0->mycallc>>8&255UL);
                s[13U] = (char)(anonym0->mycallc&255UL);
                if (anonym0->mycallc>0UL) s[14U] = anonym0->myssid;
                else s[14U] = '\020';
@@ -5587,28 +5753,37 @@ static void getadc(void)
 		anonymz->rxp = 0UL;
 		anonymz->rxbitc = 0UL;
 		anonymz->rxbyte = 0UL;
+		anonymz->enabled =0;
 		struct R41 * anonym0 = &chan[chno].r41;
 		anonym0->rxp = 0UL;
 		anonym0->rxbitc = 0UL;
 		anonym0->rxbyte = 0UL;
+		anonym0->enabled =0;
 		struct MP3 * anonym9 = &chan[chno].mp3;
 		anonym9->rxp = 0UL;
 		anonym9->rxbitc = 0UL;
 		anonym9->rxbyte = 0UL;
+		anonym9->enabled =0;
 		struct PILS * anonym5 = &chan[chno].pils;
 		anonym5->rxp = 0UL;
 		anonym5->rxbitc = 0UL;
 		anonym5->rxbyte = 0UL;
+		anonym5->enabled =0;
 		struct DFM6 * anonym1 = &chan[chno].dfm6;
 		anonym1->rxp = 264UL;
+		anonym1->enabled =0;
 		struct M10 * anonym6 = &chan[chno].m10;
 		anonym6->rxp = 101UL;
+		anonym6->enabled =0;
 		struct M20 * anonym7 = &chan[chno].m20;
 		anonym7->rxp = 70UL;
+		anonym7->enabled =0;
 		struct C34 * anonym2 = &chan[chno].c34;
 		anonym2->rxp = 0UL;
+		anonym2->enabled =0;
 		struct IMET * anonym8 = &chan[chno].imet;
 		anonym8->rxp = 0UL;
+		anonym9->enabled =0;
 
 		chan[chno].freq[0]=adcbuf[pos+2];
 		chan[chno].freq[1]=adcbuf[pos+3];
@@ -5617,8 +5792,54 @@ static void getadc(void)
 		chan[chno].freq[4]=adcbuf[pos+6];
 		chan[chno].freq[5]=adcbuf[pos+7];
 		chan[chno].freq[6]=0;
-		pos+=8;
-		//printf("CH:%i QRG:",chno);
+		chan[chno].st=(int)adcbuf[pos+8]&0xff-65;
+
+
+		switch(chan[chno].st){
+		    case 0:
+			    anonym6->enabled =1;
+                            anonym7->enabled =1;
+                            anonym2->enabled =1;
+                            anonym0->enabled =1;
+                            anonym1->enabled =1;
+                            anonym5->enabled =1;
+                            anonymz->enabled =1;
+                            anonym9->enabled =1;
+			    break;
+		    case ST_M10:
+		    case ST_M10GT:
+		    case ST_M2K2:
+			    anonym6->enabled =1;
+			    break;
+		    case ST_M20:
+			    anonym7->enabled =1;
+		    case ST_C34:
+		    case ST_C50:
+			    anonym2->enabled =1;
+			    break;
+		    case ST_RS41:
+		    case ST_RS41SGM:
+			    anonym0->enabled =1;
+			    break;
+		    case ST_DFM6:
+		    case ST_DFM9:
+		    case ST_DFM15:
+		    case ST_DFM17:
+			    anonym1->enabled =1;
+			    break;
+		    case ST_PIL:
+			    anonym5->enabled =1;
+			    break;
+		    case ST_RS92:
+			    anonymz->enabled =1;
+			    break;
+		    case ST_MP3:
+			    anonym9->enabled =1;
+			    break;
+		}
+
+		pos+=9;
+		//printf("CH:%i QRG:%s,ST:%d\n",chno,chan[chno].freq,chan[chno].st);
 		//printf(chan[chno].freq);printf("\n");
 	    }
 	 }else if(mod==0){
@@ -5700,6 +5921,7 @@ static void getadc(void)
             if (anonym->dfm6.enabled) Fsk6(c);
 	    if (anonym->m10.enabled) Fsk10(c);
 	    if (anonym->m20.enabled) Fsk20(c);
+	    if (anonym->skpp.enabled) FskSKPP(c);
          }
       }
       if (c==tmp) break;
@@ -5746,42 +5968,6 @@ extern int main(int argc, char **argv)
    adcbufsamps = 0UL;
    adcbufsampx = X2C_max_longcard;
 
-//test
-/*
-    memcpy(chan[0].m20.rxbuf, (char [])
-			    {0x45,0x20,0x00,0x00,0x7a,0x08,0xf0,0x0f,0x00,0x25,0x43,0x00,0x00,0x00,0x00,0x04,0xf9,0x7e,0xf2,0x9c,0x00,0x69,0xbd,0x74,0x00,0x00
-			    ,0x08,0x23,0x03,0x2d,0xe7,0x51,0x00,0xe4,0xf7,0x49,0xbc,0x3e,0xe0,0x21,0x00,0x00,0x00,0x00,0xff,0x02,0x22,0xef,0x50,0xf3,0x09,0x64
-			    ,0x57,0xae,0x25,0x00,0xa4,0xb5,0x40,0x51,0x00,0x20,0x00,0x94,0x02,0x6f,0x00,0x04,0xe1,0xfb}, sizeof chan[0].m20.rxbuf);
-   decodeframe20(0);
-*/
-/*
-uint32_t i; char fullid[15];
-char rxb[]={0x45,0x20,0x00,0x00,0x7a,0x08,0xf0,0x0f,0x00,0x25,0x43,0x00,0x00,0x00,0x00,0x04,0xf9,0x7e,0xf2,0x9c,0x00,0x69,0xbd,0x74,0x00,0x00
-                            ,0x08,0x23,0x03,0x2d,0xe7,0x51,0x00,0xe4,0xf7,0x49,0xbc,0x3e,0xe0,0x21,0x00,0x00,0x00,0x00,0xff,0x02,0x22,0xef,0x50,0xf3,0x09,0x64
-                            ,0x57,0xae,0x25,0x00,0xa4,0xb5,0x40,0x51,0x00,0x20,0x00,0x94,0x02,0x6f,0x00,0x04,0xe1,0xfb};
-
-//char rxb[]={0x45,0x20,0x88,0x22,0x57,0x24,0x0b,0x0c,0x27,0xbf,0xfc,0xfd,0xc0,0xfd,0xdb,0x02,0x08,0xba,0xf2,0x9c,0x00,0xd8,0x67,0x3e,0x02,0x08,0x08,0x39,0x02,0xe8,0x0f,0xc6,0x01,0x01,0xce,0xf4,0x2f,0x01,0xaa,0xd7,
-//                      0x25,0x00,0x00,0x00,0xfc,0x33,0x22,0xe2,0x50,0xd1,0x08,0x24,0xc7,0x91,0x05,0x00,0xe8,0x15,0x47,0x4d,0x00,0x18,0x00,0x3c,0x08,0x0f,0x01,0x04,0x95,0xfe};
-
-unsigned int rxb_len=0x45;
-i = m10card(rxb, rxb_len, 34L, 1L); // 002-2-xxxxx 911-2-xxxxx
-         fullid[0U] = (char)((i&127UL)/12UL+48UL);
-         fullid[1U] = (char)(((i&127UL)%12UL+1UL)/10UL+48UL);
-         fullid[2U] = (char)(((i&127UL)%12UL+1UL)%10UL+48UL);
-         fullid[3U] = '-';
-         fullid[4U] = (char)(i/128UL+1UL+48UL);
-         fullid[5U] = '-';
-         i = m10card(rxb, rxb_len, 35L, 2L)/4UL;
-//	 printf("%
-         fullid[6U] = (char)((i/10000UL)%10UL+48UL);
-         fullid[7U] = (char)((i/1000UL)%10UL+48UL);
-         fullid[8U] = (char)((i/100UL)%10UL+48UL);
-         fullid[9U] = (char)((i/10UL)%10UL+48UL);
-         fullid[10U] = (char)(i%10UL+48UL);
-         fullid[11U] = 0;
-
-printf("SN:%s\n",fullid);
-*/
    for (;;) getadc();
    X2C_EXIT();
    return 0;
