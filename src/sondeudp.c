@@ -533,7 +533,7 @@ struct CHAN {
    char nr;
    char freq[10];
    char pfreq[10];
-   int st;
+   unsigned int st;
 
 };
 
@@ -5792,7 +5792,7 @@ static void getadc(void)
 		chan[chno].freq[4]=adcbuf[pos+6];
 		chan[chno].freq[5]=adcbuf[pos+7];
 		chan[chno].freq[6]=0;
-		chan[chno].st=(int)adcbuf[pos+8]&0xff-65;
+		chan[chno].st=(unsigned int)((adcbuf[pos+8])&0xff)-65;
 
 
 		switch(chan[chno].st){
