@@ -384,6 +384,84 @@ struct M20 {
 struct SCID;
 
 
+struct ATMS;
+struct ATMS {
+   char enabled;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t manchestd;
+   float bitlev;
+   float noise;
+   float lastu;
+   char cbit;
+   char oldd;
+   char plld;
+   char lastmanch;
+   char txok;
+   uint32_t rxb;
+   uint32_t rxp;
+   char rxbuf[300];
+   char synbuf[100];
+   AFIRTAB afirtab;
+   uint32_t synword;
+   uint32_t demodbaud;
+   uint32_t configbaud;
+
+   float noise0;
+   float bitlev0;
+   uint32_t rxbyte;
+   uint32_t rxbitc;
+   uint32_t synp;
+   char frame[100];
+   char rev;
+   char headok;
+   char id[15];
+   float freq;
+
+};
+
+
+
+struct IMS;
+struct IMS {
+   char enabled;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t manchestd;
+   float bitlev;
+   float noise;
+   float lastu;
+   char cbit;
+   char oldd;
+   char plld;
+   char lastmanch;
+   char txok;
+   uint32_t rxb;
+   uint32_t rxp;
+   char rxbuf[300];
+   char synbuf[100];
+   AFIRTAB afirtab;
+   uint32_t synword;
+   uint32_t demodbaud;
+   uint32_t configbaud;
+
+   float noise0;
+   float bitlev0;
+   uint32_t rxbyte;
+   uint32_t rxbitc;
+   uint32_t synp;
+   char frame[100];
+   char rev;
+   char headok;
+   char id[15];
+   float freq;
+
+};
+
+
+struct SCID;
+
+
 struct SCID {
    CNAMESTR id;
    CNAMESTR idcheck;
@@ -529,6 +607,8 @@ struct CHAN {
    struct IMET imet;
    struct MP3 mp3;
    struct SKPP skpp;
+   struct IMS ims;
+   struct ATMS atms;
 
    char nr;
    char freq[10];
@@ -875,8 +955,10 @@ static void Config(void)
    struct M20 * anonym7;
    struct IMET * anonym8;
    struct MP3 * anonym9;
-   struct MP3 * anonym10;
+  
    struct SKPP * anonym11;
+   struct IMS * anonym12;
+   struct ATMS * anonym13;
 
    for (c = 0UL; c<=63UL; c++) {
       { /* with */
@@ -983,7 +1065,7 @@ static void Config(void)
          struct M20 * anonym7 = &chan[c].m20;
          anonym7->configbaud = 9600UL;
          anonym7->demodbaud = (2UL*anonym7->configbaud*65536UL)/adcrate;
-         initafir(anonym7->afirtab, 0UL, 5200UL, X2C_DIVR((float)chan[c].configequalizer,100.0f)); //5200
+         initafir(anonym7->afirtab, 0UL, 6000UL, X2C_DIVR((float)chan[c].configequalizer,100.0f)); //5200
          anonym7->baudfine = 0L;
          anonym7->noise = 0.0f;
          anonym7->bitlev = 0.0f;
@@ -991,6 +1073,32 @@ static void Config(void)
          anonym7->rxp = 70UL; /* out of fram, wait for sync */
          anonym7->manchestd = 0L;
          anonym7->txok = 0;
+      }
+      { /* with */
+         struct IMS * anonym12 = &chan[c].ims;
+         anonym12->configbaud = 2400UL;
+         anonym12->demodbaud = (2UL*anonym12->configbaud*65536UL)/adcrate;
+         initafir(anonym12->afirtab, 0UL, 4800UL, X2C_DIVR((float)chan[c].configequalizer,100.0f)); //5200
+         anonym12->baudfine = 0L;
+         anonym12->noise = 0.0f;
+         anonym12->bitlev = 0.0f;
+         anonym12->cbit = 0;
+         anonym12->rxp = 70UL; /* out of fram, wait for sync */
+         anonym12->manchestd = 0L;
+         anonym12->txok = 0;
+      }
+      { /* with */
+         struct ATMS * anonym13 = &chan[c].atms;
+         anonym13->configbaud = 2400UL;
+         anonym13->demodbaud = (2UL*anonym13->configbaud*65536UL)/adcrate;
+         initafir(anonym13->afirtab, 0UL, 5600UL, X2C_DIVR((float)chan[c].configequalizer,100.0f)); //5200
+         anonym13->baudfine = 0L;
+         anonym13->noise = 0.0f;
+         anonym13->bitlev = 0.0f;
+         anonym13->cbit = 0;
+         anonym13->rxp = 0UL; /* out of fram, wait for sync */
+         anonym13->manchestd = 0L;
+         anonym13->txok = 0;
       }
 
       { /* with */
@@ -1073,6 +1181,8 @@ static void Parms(void)
    struct IMET * anonym8;
    struct MP3 * anonym9;
    struct SKPP * anonym11;
+   struct IMS * anonym12;
+   struct ATMS * anonym13;
    err = 0;
    abortonsounderr = 0;
    adcrate = 22050UL;
@@ -1101,13 +1211,11 @@ static void Parms(void)
          anonym0->pllshift = 1024L;
       }
 
-      //------pilot sonde
       { // with 
          struct PILS * anonym5 = &chan[channel].pils;
          anonym5->enabled = 1;
          anonym5->pllshift = 1024L;
       }
-      //---pilot sonde^
       { /* with */
          struct DFM6 * anonym1 = &chan[channel].dfm6;
          anonym1->enabled = 1;
@@ -1160,6 +1268,16 @@ static void Parms(void)
          struct M20 * anonym7 = &chan[channel].m20;
          anonym7->enabled = 1;
          anonym7->pllshift = 4096L;
+      }
+      { /* with */
+         struct IMS * anonym12 = &chan[channel].ims;
+         anonym12->enabled = 1;
+         anonym12->pllshift = 4096L;
+      }
+      { /* with */
+         struct ATMS * anonym13 = &chan[channel].atms;
+         anonym13->enabled = 1;
+         anonym13->pllshift = 4096L;
       }
 
       { /* with */
@@ -1297,6 +1415,30 @@ static void Parms(void)
                } /* end for */
             }
          }
+	 else if (h[1U]=='B') {
+            if (chanset) {
+               /* set only 1 chan */
+               chan[channel].ims.enabled = 0;
+            }
+            else {
+               /* use before -C set both */
+               for (ch = 0UL; ch<=63UL; ch++) {
+                  chan[ch].ims.enabled = 0;
+               } /* end for */
+            }
+         }
+	 else if (h[1U]=='E') {
+            if (chanset) {
+               /* set only 1 chan */
+               chan[channel].ims.enabled = 0;
+            }
+            else {
+               /* use before -C set both */
+               for (ch = 0UL; ch<=63UL; ch++) {
+                  chan[ch].atms.enabled = 0;
+               } /* end for */
+            }
+         }
 
 
          else if (h[1U]=='N') {
@@ -1415,6 +1557,8 @@ static void Parms(void)
                osi_WrStrLn(" -8             disable PILOTSONDE decoding (use -C before to select 1 channel)", 74ul);
                osi_WrStrLn(" -9             disable RS92 decoding (use -C before to select 1 channel)", 74ul);
 	       osi_WrStrLn(" -A             disable MP3 decoding (use -C before to select 1 channel)", 73ul);
+	       osi_WrStrLn(" -B             disable IMS decoding (use -C before to select 1 channel)", 73ul);
+	       osi_WrStrLn(" -E             disable ATMS decoding (use -C before to select 1 channel)", 73ul);
                osi_WrStrLn(" -a             abort on sounddevice error else retry to open (USB audio...)", 77ul);
                osi_WrStrLn(" -c <num>       maxchannels, 0 for automatic channel number recognition", 72ul);
                osi_WrStrLn(" -C <num>       channel parameters follow (repeat for each channel)", 68ul);
@@ -2481,10 +2625,10 @@ static void decodeframe20(uint32_t m)
 
       if (((unsigned char)anonym->rxbuf[0]==0x45 && (unsigned char)anonym->rxbuf[1]==0x20) && cs==m10card(anonym->rxbuf, 70ul, 68L, 2L)) {
          /* crc ok */
-	    printf("\n");
-	    for(k=0;k<70;k++)
-		printf("%02x",(unsigned char)anonym->rxbuf[k]);
-	    printf("\n");
+//	    printf("\n");
+//	    for(k=0;k<70;k++)
+//		printf("%02x",(unsigned char)anonym->rxbuf[k]);
+//   printf("\n");
 
 	
 	     tow=0;
@@ -2612,7 +2756,7 @@ static void decodeframe20(uint32_t m)
 	    for(i=0;i<9;i++)			//nazwa
 		s[i+13]=ids[i];
 	    s[22]=0;
-
+	    printf("\n");
 	    if( lat>-90.0 && lat<90.0 && lon>=-180.0 && lon<=180.0 && alt>0.0 && alt<45000.0){
 		sprintf(s,"%s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f\n",s,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2);
 		alludp(chan[m].udptx, 100, s, 100);
@@ -2675,7 +2819,6 @@ static void demodbyte20(uint32_t m, char d)
    }
 } /* end demodbyte10() */
 
-
 static void demodbit20(uint32_t m, float u, float u0)
 {
    char bit;
@@ -2736,7 +2879,937 @@ static void demod20(float u, uint32_t m)
    }
 } 
 
+
 /*---------------------- M20 */
+
+/* IMS ---------------------- */
+
+
+#define IMS_FLEN 150
+#define MAX_DEG 254
+
+typedef struct {
+    uint32_t f;
+    uint32_t ord;
+    uint8_t alpha;
+} GF_t;
+
+static uint8_t exp_a[256],
+             log_a[256];
+
+typedef struct {
+    uint8_t N;
+    uint8_t t;
+    uint8_t R;  // RS: R=2t, BCH: R<=mt
+    uint8_t K;  // K=N-R
+    uint8_t b;
+    uint8_t g[MAX_DEG+1];  // ohne g[] eventuell als init_return
+} RS_t;
+
+
+static RS_t RS256 = { 255, 12, 24, 231, 0, {0}};
+static RS_t BCH64 = {  63,  2, 12,  51, 1, {0}};
+
+static RS_t RS;
+static GF_t GF;
+
+static GF_t GF64BCH = { 0x43,   // BCH-GF(2^6): X^6 + X + 1 : 0x43
+                        64,     // 2^6
+                        0x02 }; // generator: alpha = X
+
+static
+int GF_deg(uint32_t p) {
+    uint32_t d = 31;
+    if (p == 0) return -1;  /* deg(0) = -infty */
+    else {
+        while (d && !(p & (1<<d)))  d--;  /* d<32, 1L = 1 */
+    }
+    return d;
+}
+
+static uint8_t GF_mul(uint8_t p, uint8_t q) {
+  uint32_t x;
+  if ((p == 0) || (q == 0)) return 0;
+  x = (uint32_t)log_a[p] + log_a[q];
+  return exp_a[x % (GF.ord-1)];     // a^(ord-1) = 1
+}
+
+static uint8_t GF_inv(uint8_t p) {
+  if (p == 0) return 0;             // DIV_BY_ZERO
+  return exp_a[GF.ord-1-log_a[p]];  // a^(ord-1) = 1
+}
+
+static
+uint8_t poly_eval(uint8_t poly[], uint8_t x) {
+    int n;
+    uint8_t xn, y;
+
+    y = poly[0];
+    if (x != 0) {
+        for (n = 1; n < GF.ord-1; n++) {
+            xn = exp_a[(n*log_a[x]) % (GF.ord-1)];
+            y ^= GF_mul(poly[n], xn);
+        }
+    }
+    return y;
+}
+
+static
+uint8_t GF2m_mul(uint8_t a, uint8_t b) {
+    uint32_t aa = a;
+    uint8_t ab = 0;
+    int i, m = GF_deg(b);
+
+    if (b & 1) ab = a;
+
+    for (i = 0; i < m; i++) {
+        aa = (aa << 1);  // a = a * X
+        if (GF_deg(aa) == GF_deg(GF.f))
+             aa ^= GF.f; // a = a - GF.f
+        b >>= 1;
+        if (b & 1) ab ^= (uint8_t)aa;        /* b_{i+1} > 0 ? */
+    }
+    return ab;
+}
+
+static
+int GF_genTab(GF_t gf, uint8_t expa[], uint8_t loga[]) {
+    int i, j;
+    uint8_t b;
+
+//    GF.f = f;
+//    GF.ord = 1 << GF_deg(GF.f);
+
+    b = 0x01;
+    for (i = 0; i < gf.ord; i++) {
+        expa[i] = b;         // b_i = a^i
+        b = GF2m_mul(gf.alpha, b);
+    }
+
+    loga[0] = -00;  // log(0) = -inf
+    for (i = 1; i < gf.ord; i++) {
+        b = 0x01; j = 0;
+        while (b != i) {
+            b = GF2m_mul(gf.alpha, b);
+            j++;
+            if (j > gf.ord-1) {
+                return -1;  // a not primitive
+            }
+        }   // j = log_a(i)
+        loga[i] = j;
+    }
+
+    return 0;
+}
+
+int rs_init_BCH64() {
+    int i, check_gen;
+
+    GF = GF64BCH;
+    check_gen = GF_genTab( GF, exp_a, log_a);
+
+    RS = BCH64; // N=63, t=2, b=1
+    for (i = 0; i <= MAX_DEG; i++) RS.g[i] = 0;
+
+    // g(X)=X^12+X^10+X^8+X^5+X^4+X^3+1
+    //     =(X^6+X+1)(X^6+X^4+X^2+X+1)
+    RS.g[0] = RS.g[3] = RS.g[4] = RS.g[5] = RS.g[8] = RS.g[10] = RS.g[12] = 1;
+
+    return check_gen;
+}
+
+static
+int syndromes(uint8_t cw[], uint8_t *S) {
+    int i, errors = 0;
+    uint8_t a_i;
+
+    // syndromes: e_j=S(alpha^(b+i))
+    for (i = 0; i < 2*RS.t; i++) {
+        a_i = exp_a[(RS.b+i) % (GF.ord-1)];  // alpha^(b+i)
+        S[i] = poly_eval(cw, a_i);
+        if (S[i]) errors = 1;
+    }
+    return errors;
+}
+
+static
+int poly_deg(uint8_t p[]) {
+    int n = MAX_DEG;
+    while (p[n] == 0 && n > 0) n--;
+    if (p[n] == 0) n--;  // deg(0) = -inf
+    return n;
+}
+
+static
+int poly_divmod(uint8_t p[], uint8_t q[], uint8_t *d, uint8_t *r) {
+  int deg_p, deg_q;            // p(x) = q(x)d(x) + r(x)
+  int i;                       //        deg(r) < deg(q)
+  uint8_t c;
+
+  deg_p = poly_deg(p);
+  deg_q = poly_deg(q);
+
+  if (deg_q < 0) return -1;  // DIV_BY_ZERO
+
+  for (i = 0; i <= MAX_DEG; i++) d[i] = 0;
+  for (i = 0; i <= MAX_DEG; i++) r[i] = 0;
+
+
+  c = GF_mul( p[deg_p], GF_inv(q[deg_q]));
+
+  if (deg_q == 0) {
+      for (i = 0; i <= deg_p;   i++) d[i] = GF_mul(p[i], c);
+      for (i = 0; i <= MAX_DEG; i++) r[i] = 0;
+  }
+  else if (deg_p == 0) {
+      for (i = 0; i <= MAX_DEG; i++) {
+          d[i] = 0;
+          r[i] = 0;
+      }
+  }
+
+  else if (deg_p < deg_q) {
+      for (i = 0; i <= MAX_DEG; i++) d[i] = 0;
+      for (i = 0; i <= deg_p; i++) r[i] = p[i]; // r(x)=p(x), deg(r)<deg(q)
+      for (i = deg_p+1; i <= MAX_DEG; i++) r[i] = 0;
+  }
+  else {
+      for (i = 0; i <= deg_p; i++) r[i] = p[i];
+      while (deg_p >= deg_q) {
+          d[deg_p-deg_q] = c;
+          for (i = 0; i <= deg_q; i++) {
+              r[deg_p-i] ^= GF_mul( q[deg_q-i], c);
+          }
+          while (r[deg_p] == 0 && deg_p > 0) deg_p--;
+          if (r[deg_p] == 0) deg_p--;
+          if (deg_p >= 0) c = GF_mul( r[deg_p], GF_inv(q[deg_q]));
+      }
+  }
+  return 0;
+}
+
+static
+int poly_add(uint8_t a[], uint8_t b[], uint8_t *sum) {
+    int i;
+    uint8_t c[MAX_DEG+1];
+
+    for (i = 0; i <= MAX_DEG; i++) {
+            c[i] = a[i] ^ b[i];
+    }
+
+    for (i = 0; i <= MAX_DEG; i++) { sum[i] = c[i]; }
+
+    return 0;
+}
+
+static
+int poly_mul(uint8_t a[], uint8_t b[], uint8_t *ab) {
+    int i, j;
+    uint8_t c[MAX_DEG+1];
+
+    if (poly_deg(a)+poly_deg(b) > MAX_DEG) {
+       return -1;
+    }
+
+    for (i = 0; i <= MAX_DEG; i++) { c[i] = 0; }
+
+    for (i = 0; i <= poly_deg(a); i++) {
+        for (j = 0; j <= poly_deg(b); j++) {
+            c[i+j] ^= GF_mul(a[i], b[j]);
+        }
+    }
+
+    for (i = 0; i <= MAX_DEG; i++) { ab[i] = c[i]; }
+
+    return 0;
+}
+
+
+static
+int polyGF_lfsr(int deg, uint8_t S[],
+                uint8_t *Lambda, uint8_t *Omega ) {
+// BCH/RS/LFSR: deg=t,
+// S(x)Lambda(x) = Omega(x) mod x^(2t)
+    int i;
+    uint8_t r0[MAX_DEG+1], r1[MAX_DEG+1], r2[MAX_DEG+1],
+          s0[MAX_DEG+1], s1[MAX_DEG+1], s2[MAX_DEG+1],
+          quo[MAX_DEG+1];
+
+    for (i = 0; i <= MAX_DEG; i++) { Lambda[i] = 0; }
+    for (i = 0; i <= MAX_DEG; i++) { Omega[i] = 0; }
+
+    for (i = 0; i <= MAX_DEG; i++) { r0[i] = S[i]; }
+    for (i = 0; i <= MAX_DEG; i++) { r1[i] = 0; } r1[2*deg] = 1; //x^2t
+    s0[0] = 1; for (i = 1; i <= MAX_DEG; i++) { s0[i] = 0; }
+    s1[0] = 0; for (i = 1; i <= MAX_DEG; i++) { s1[i] = 0; }
+    for (i = 0; i <= MAX_DEG; i++) { r2[i] = 0; }
+    for (i = 0; i <= MAX_DEG; i++) { s2[i] = 0; }
+
+    while ( poly_deg(r1) >= deg ) {
+        poly_divmod(r0, r1, quo, r2);
+        for (i = 0; i <= MAX_DEG; i++) { r0[i] = r1[i]; }
+        for (i = 0; i <= MAX_DEG; i++) { r1[i] = r2[i]; }
+
+        poly_mul(quo, s1, s2);
+        poly_add(s0, s2, s2);
+        for (i = 0; i <= MAX_DEG; i++) { s0[i] = s1[i]; }
+        for (i = 0; i <= MAX_DEG; i++) { s1[i] = s2[i]; }
+    }
+
+// deg > 0:
+    for (i = 0; i <= MAX_DEG; i++) { Omega[i]  = r1[i]; }
+    for (i = 0; i <= MAX_DEG; i++) { Lambda[i] = s1[i]; }
+
+    return 0;
+}
+
+int rs_decode_bch_gf2t2(uint8_t cw[], uint8_t *err_pos, uint8_t *err_val) {
+// binary 2-error correcting BCH
+
+    uint8_t x, gamma,
+          S[MAX_DEG+1],
+          L[MAX_DEG+1], L2,
+          Lambda[MAX_DEG+1],
+          Omega[MAX_DEG+1];
+
+    int i, n, errors = 0;
+
+
+    for (i = 0; i < RS.t; i++) { err_pos[i] = 0; }
+    for (i = 0; i < RS.t; i++) { err_val[i] = 0; }
+
+    for (i = 0; i <= MAX_DEG; i++) { S[i] = 0; }
+    errors = syndromes(cw, S);
+    // wenn  S(x)=0 ,  dann poly_divmod(cw, RS.g, d, rem): rem=0
+
+    if (errors) {
+        polyGF_lfsr(RS.t, S, Lambda, Omega);
+        gamma = Lambda[0];
+        if (gamma) {
+            for (i = poly_deg(Lambda); i >= 0; i--) Lambda[i] = GF_mul(Lambda[i], GF_inv(gamma));
+            for (i = poly_deg(Omega) ; i >= 0; i--)  Omega[i] = GF_mul( Omega[i], GF_inv(gamma));
+        }
+        else {
+            errors = -2;
+            return errors;
+        }
+
+        // GF(2)-BCH, t=2:
+        // S1 = S[0]
+        //   S1^2 = S2 , S2^2 = S4
+        // L(x) = 1 + L1 x + L2 x^2  (1-2 errors)
+        //   L1 = S1 , L2 = (S3 + S1^3)/S1
+        if ( RS.t == 2 ) {
+
+            for (i = 0; i <= MAX_DEG; i++) { L[i] = 0; }
+            L[0] = 1;
+            L[1] = S[0];
+            L2 = GF_mul(S[0], S[0]); L2 = GF_mul(L2, S[0]); L2 ^= S[2];
+            L2 = GF_mul(L2, GF_inv(S[0]));
+            L[2] = L2;
+
+            if (S[1] != GF_mul(S[0],S[0]) || S[3] != GF_mul(S[1],S[1])) {
+                errors = -2;
+                return errors;
+            }
+            if (L[1] != Lambda[1] || L[2] != Lambda[2] ) {
+                errors = -2;
+                return errors;
+            }
+        }
+
+        n = 0;
+        for (i = 1; i < GF.ord ; i++) { // Lambda(0)=1
+            x = (uint8_t)i;    // roll-over
+            if (poly_eval(Lambda, x) == 0) {
+                // error location index
+                err_pos[n] = log_a[GF_inv(x)];
+                // error value;   bin-BCH: err_val=1
+                err_val[n] = 1; // = forney(x, Omega, Lambda);
+                n++;
+            }
+            if (n >= poly_deg(Lambda)) break;
+        }
+
+        if (n < poly_deg(Lambda)) errors = -1; // uncorrectable errors
+        else {
+            errors = n;
+            for (i = 0; i < errors; i++) cw[err_pos[i]] ^= err_val[i];
+        }
+    }
+
+    return errors;
+}
+
+
+static int decodeframeIMS(uint32_t m){
+   uint32_t week;
+   uint32_t tow;
+   uint32_t cs;
+   uint32_t i;
+   int32_t ci;
+   double dir;
+   double v;
+   double vv;
+   double vn;
+   double ve;
+   double alt;
+   double lon;
+   double lat;
+   float vbat;
+   float temp1,temp2;
+   uint32_t time0;
+   uint32_t id;
+   int k;
+   uint16_t cnt;
+   uint32_t tmpf;
+   char sntxt[12]={0,0};
+   char frs[10];
+   char txtt[100];
+   
+   float *fcfg = (float *)&tmpf;
+   double vH,freq;
+
+
+   char s[400];
+   struct IMS * anonym;
+   struct CHAN * anonym0; /* call if set */
+   { 
+      struct IMS * anonym = &chan[m].ims;
+		    cnt=(anonym->frame[3]&0xff)<<8 | anonym->frame[4]&0xff;
+
+		    if(cnt%2==0){
+			tmpf=(anonym->frame[0x20]&0xff)<<24 | (anonym->frame[0x21]&0xff)<<16 | (anonym->frame[0x22]&0xff)<<8 | (anonym->frame[0x23]&0xff);
+			lat=(double)tmpf;
+			tmpf=(anonym->frame[0x24]&0xff)<<24 | (anonym->frame[0x25]&0xff)<<16 | (anonym->frame[0x26]&0xff)<<8 | (anonym->frame[0x27]&0xff);
+			lon=(double)tmpf;
+			tmpf=(anonym->frame[0x28]&0xff)<<16 | (anonym->frame[0x29]&0xff)<<8 | (anonym->frame[0x2a]&0xff);
+			alt=(double)tmpf/100.0;
+			int latdeg = (int)lat / 1e6;
+			lat=(double)(lat/1e6-latdeg)*100/60.0 + latdeg;
+			int londeg = (int)lon / 1e6;
+			lon=(double)(lon/1e6-londeg)*100/60.0 + londeg;
+			tmpf=(anonym->frame[0x30]&0xff)<<8 | (anonym->frame[0x31]&0xff);
+			dir=(double)tmpf/100.0;
+			tmpf=(anonym->frame[0x32]&0xff)<<8 | (anonym->frame[0x33]&0xff);
+			vH=(double)tmpf/1.944e2;
+
+
+		    }
+		    if(cnt%64==15){
+			float fq;
+			tmpf=(anonym->frame[0x09]&0xff)<<24 | (anonym->frame[0x0a]&0xff)<<16 | (anonym->frame[0x07]&0xff)<<8 | (anonym->frame[0x08]&0xff);
+			anonym->freq=400.0+(*fcfg)/10;
+		    }
+		    else if(cnt%16==0){
+			tmpf=(anonym->frame[0x09]&0xff)<<24 | (anonym->frame[0x0a]&0xff)<<16 | (anonym->frame[0x07]&0xff)<<8 | (anonym->frame[0x08]&0xff);
+			float sn=-1;
+			sn=*fcfg;
+			sprintf(sntxt,"IMS%.0f",sn);
+			strcpy(anonym->id,sntxt);
+			anonym->id[9]=0;
+		    }
+		    if(strlen(anonym->id)>0) {
+			if(lat>100 || lat<0 || lon>100 || lon<0 || alt<1 || alt>40000) return 0;
+			if(cnt%16!=0) anonym->id[0]='i';
+			sprintf(txtt,"%s%05u%07.0f%08.0f%05.0f%03.0f%04.0f%06.0fXXXXXXXXXXXXXX",anonym->id,cnt,lat*100000,lon*100000,alt,dir,((vH+200.0)*10.0),anonym->freq*1000);
+			strcpy(anonym->frame,txtt);
+      			printf("%02i: %s Fr:%05u %3.3fMHz Lat:%4.5f  Lon:%4.5f Alt:%05.1f Dir:%3.1f vH:%3.1f   \n",m,anonym->id,cnt,anonym->freq,lat,lon,alt,dir,vH);
+		    }
+
+   }
+
+}
+
+static void sendIMS(uint32_t m)
+{
+   uint32_t i;
+   int k;
+   struct CHAN * anonym;
+
+   { /* with */
+      struct CHAN * anonym = &chan[m];
+      if (anonym->mycallc>0UL) {
+         chan[m].ims.frame[62U] = (char)(anonym->mycallc>>24);
+         chan[m].ims.frame[63U] = (char)(anonym->mycallc>>16&255UL);
+         chan[m].ims.frame[64U] = (char)(anonym->mycallc>>8&255UL);
+         chan[m].ims.frame[65U] = (char)(anonym->mycallc&255UL);
+         chan[m].ims.frame[66U] = anonym->myssid;
+         chan[m].ims.frame[67U] = 0;
+
+         chan[m].ims.frame[68U] = chan[m].freq[0];
+         chan[m].ims.frame[69U] = chan[m].freq[1];
+         chan[m].ims.frame[70U] = chan[m].freq[2];
+         chan[m].ims.frame[71U] = chan[m].freq[3];
+         chan[m].ims.frame[72U] = chan[m].freq[4];
+         chan[m].ims.frame[73U] = chan[m].freq[5];
+      }
+      alludp(chan[m].udptx, 74UL, chan[m].ims.frame, 74ul);
+   }
+} /* end sendpils() */
+
+
+
+int bips(char* frame_rawbits, uint8_t *frame_bits,uint16_t len) {
+
+    uint16_t tmp=0,i,j,k;
+    uint8_t b;
+    
+    k=0;
+    for(i=0;i<len;i+=2){
+	tmp=0;
+	tmp=((uint8_t)frame_rawbits[i]<<8) | ((uint8_t)frame_rawbits[i+1]);
+	b=0;
+	for(j=0;j<8;j++){
+	    b<<=1;
+	    if((tmp&0xc000)==0xc000 || (tmp&0xc000)==0x0000) {b|=1;}// printf("1");} 
+
+	    tmp<<=2; 
+	}
+	frame_bits[k]=b;
+	k++;
+    }
+}
+
+#define MAX_DEG 254 
+
+uint16_t calcpar(uint16_t v){  // word value to compute the parity of
+    
+    v ^= v >> 16;
+    v ^= v >> 8;
+    v ^= v >> 4;
+    v &= 0xf;
+    return ((0x6996 >> v) & 1);
+}
+
+int IMSraw2frame(char *in, char *out){
+    uint16_t i,j,k,jj;
+    uint16_t val1,val2,bch;
+    uint64_t buff;
+    uint16_t p1, p2;
+    uint64_t tmpl;
+
+    int   errors;
+    uint8_t cw[63+1],  // BCH(63,51), t=2
+      err_pos[4],
+      err_val[4];
+    uint8_t block_err[6];
+    int block, check_err;
+    int par=1, par_alt=1;
+
+    rs_init_BCH64();
+
+    for(i=0;i<3;i++) out[i]=in[i];
+
+    buff=0;
+    j=3;
+    k=3;
+    for(i=0;i<12;i++){
+	buff|=(uint8_t)(in[j++]%0xff);  buff<<=8;
+	buff|=(uint8_t)(in[j++]%0xff);  buff<<=8;
+	buff|=(uint8_t)(in[j++]%0xff);  buff<<=8;
+	buff|=(uint8_t)(in[j++]%0xff);  
+
+	val1=(buff>>(16+i*2))&0xffff;
+	p1=(buff>>(15+i*2))&1;
+
+	buff<<=8;
+	buff|=(uint8_t)(in[j++]%0xff);  
+
+	val2=(buff>>(7+i*2))&0xffff;
+	p2=(buff>>(6+i*2))&1;
+
+	buff<<=8;
+	buff|=(uint8_t)(in[j++]%0xff);  
+	bch=(buff>>(2+i*2))&0xfff;
+	buff<<=8;
+
+    
+	tmpl=val1; tmpl<<=1;
+	tmpl|=p1; tmpl<<=16;
+	tmpl|=val2; tmpl<<=1;
+	tmpl|=p2; tmpl<<=12;
+	tmpl|=bch;
+
+	for (jj =  0; jj < 46; jj++) { 
+	    cw[jj] =tmpl&0x01;
+	    tmpl>>=1; 
+	}
+        for (jj = 46; jj < 63; jj++) cw[jj] = 0;
+
+	errors = rs_decode_bch_gf2t2(cw, err_pos, err_val);
+
+        if (errors >= 0) {
+	    check_err = 0;
+    	    for (jj = 46; jj < 63; jj++) { if (cw[jj] != 0) check_err = 0x1; }
+    	    par = 1;
+    	    for (jj = 13; jj < 13+16; jj++) par ^= cw[jj];
+    	    if (cw[12] != par) check_err |= 0x100;
+    	    par = 1;
+    	    for (jj = 30; jj < 30+16; jj++) par ^= cw[jj];
+    	    if (cw[29] != par) check_err |= 0x10;
+    	    if (check_err) errors = -3;
+        }
+        if (errors >= 0) {
+
+    	      val1=0;val2=0;
+	      for(jj=0;jj<16;jj++) { 
+			val1<<=1; 
+			val1|=cw[45-jj]&1;
+			 }
+	      for(jj=17;jj<33;jj++) { val2<<=1; val2|=cw[45-jj]&1;  }
+
+        }
+        if (errors < 0) { return 0; block_err[block] = 0xE; printf("E2: "); }	
+        else            { block_err[block] = errors;  }
+
+
+
+	
+
+	out[k++]=(val1>>8)&0xff;
+	out[k++]=(val1)&0xff;
+	out[k++]=(val2>>8)&0xff;
+	out[k++]=(val2)&0xff;
+
+
+	if(i==5){
+	    buff|=(uint8_t)(in[j++]%0xff);  buff<<=8;
+    	    buff|=(uint8_t)(in[j++]%0xff);  buff<<=8;
+	    buff|=(uint8_t)(in[j++]%0xff);  buff<<=8;
+	    out[k++]=0xFB;
+	    out[k++]=0x62;
+	    out[k++]=0x30;
+	}
+    }
+    return 1;
+}
+
+static void demodbyteIMS(uint32_t m, char d)
+{
+   uint32_t j;
+   uint32_t i;
+   uint32_t revc;
+   uint32_t normc;
+
+
+   char tmp[100],tmp1[100];
+   char s[400];
+   struct IMS * anonym;
+   { /* with */
+      struct IMS * anonym = &chan[m].ims;
+      if (anonym->rxp==0UL) {
+         anonym->synbuf[anonym->synp] = d;
+         i = anonym->synp;
+         ++anonym->synp;
+         if (anonym->synp>47UL) anonym->synp = 0UL;
+         j = 48UL;
+         normc = 0UL;
+         revc = 0UL;
+         do {
+            --j;
+            if (("010101010100101011010100110010110011010100110010"[j]=='1')==anonym->synbuf[i]) ++normc;
+            else ++revc;
+            if (i==0UL) i = 47UL;
+            else --i;
+         } while (!(j==0UL || normc>1UL && revc>1UL));
+         anonym->headok = normc==0UL || revc==0UL;
+         anonym->rev = normc<revc;
+         if (j==0UL) {
+                anonym->rxbuf[0UL]=0b01010101;            //fill in first 3 bytes )as we lost it for header
+                anonym->rxbuf[1UL]=0b01001010;            //recovery of first bytes for crc calcs
+                anonym->rxbuf[2UL]=0b11010100;
+		anonym->rxbuf[3UL]=0b11001011;
+		anonym->rxbuf[4UL]=0b00110101;
+		anonym->rxbuf[5UL]=0b00110010;
+                anonym->rxp = 6UL;
+         }
+
+         anonym->rxbitc = 0UL;
+      }
+      else {
+         anonym->rxbyte = anonym->rxbyte*2UL+1UL*(uint32_t)(d!=anonym->rev);
+
+         ++anonym->rxbitc;
+         if (anonym->rxbitc>=8UL) {
+            anonym->rxbuf[anonym->rxp] = (char)((uint8_t)anonym->rxbyte);
+            ++anonym->rxp;
+            if (anonym->rxp>=IMS_FLEN) {                        // if full sentence received
+		anonym->rxbuf[IMS_FLEN]=0;
+
+		bips(anonym->rxbuf, tmp,IMS_FLEN);
+		if(IMSraw2frame(tmp,anonym->frame)){
+		    decodeframeIMS(m);
+		    sendIMS(m);
+			
+                }else printf("ERR\n");
+		anonym->rxp = 0UL;
+            }
+            if (anonym->rxp==80UL) {
+               anonym->bitlev0 = anonym->bitlev;
+                /* save quality before end of shortst frame */
+               anonym->noise0 = anonym->noise;
+            }
+            anonym->rxbitc = 0UL;
+         }
+      }
+   }
+} 
+
+
+static void demodbitIMS(uint32_t m, float u)
+{
+   char d;
+   float ua;
+   struct IMS * anonym;
+   d = u>=0.0f;
+   { /* with */
+      struct IMS * anonym = &chan[m].ims;
+      demodbyteIMS(m, d);
+      /*quality*/
+      ua = (float)fabs(u)-anonym->bitlev;
+      anonym->bitlev = anonym->bitlev+ua*0.005f;
+      anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+   }
+} 
+
+
+static void demodIMS(float u, uint32_t m)
+{
+   char d;
+   struct IMS * anonym;
+   { /* with */
+      struct IMS * anonym = &chan[m].ims;
+      d = u>=0.0f;
+      if (anonym->cbit) {
+         if (chan[m].ims.enabled) demodbitIMS(m, u);
+         if (d!=anonym->oldd) {
+            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
+            else anonym->baudfine -= anonym->pllshift;
+            anonym->oldd = d;
+         }
+         anonym->lastu = u;
+      }
+      else anonym->plld = d;
+      anonym->cbit = !anonym->cbit;
+   }
+} 
+
+
+/* -------------------------IMS */
+
+/* _________________________ATMS */
+
+#define ATMS_FLEN 53
+#define CRCATMS 0x8005
+
+static void sendATMS(uint32_t m)
+{
+   uint32_t i;
+   int k;
+   struct CHAN * anonym;
+
+
+   { /* with */
+      struct CHAN * anonym = &chan[m];
+      if (anonym->mycallc>0UL) {
+         chan[m].atms.frame[62U] = (char)(anonym->mycallc>>24);
+         chan[m].atms.frame[63U] = (char)(anonym->mycallc>>16&255UL);
+         chan[m].atms.frame[64U] = (char)(anonym->mycallc>>8&255UL);
+         chan[m].atms.frame[65U] = (char)(anonym->mycallc&255UL);
+         chan[m].atms.frame[66U] = anonym->myssid;
+         chan[m].atms.frame[67U] = 0;
+
+         chan[m].atms.frame[68U] = chan[m].freq[0];
+         chan[m].atms.frame[69U] = chan[m].freq[1];
+         chan[m].atms.frame[70U] = chan[m].freq[2];
+         chan[m].atms.frame[71U] = chan[m].freq[3];
+         chan[m].atms.frame[72U] = chan[m].freq[4];
+         chan[m].atms.frame[73U] = chan[m].freq[5];
+      }
+      alludp(chan[m].udptx, 73UL, chan[m].atms.frame, 73ul);
+      ///osi_WrStrLn("sending UDP data...",19UL);
+   }
+} /* end sendpils() */
+
+
+
+uint16_t crc_atms(const void *data, size_t length) {
+
+        size_t i, j;
+        unsigned int value=0;
+        const unsigned char *x = (const unsigned char *)data;
+        for(i = 0; i < length; i++) {
+            value ^=   x[i] << 8;
+            for(j = 0; j < 8; j++) {
+                if(value & 0x8000)
+                    value = (value << 1) ^ 0x8005;
+                else
+                    value <<= 1;
+            }
+        }
+        return value ;
+
+}
+
+static void demodbyteATMS(uint32_t m, char d)
+{
+   uint32_t j,t;
+   uint32_t i;
+   uint32_t revc;
+   uint32_t normc;
+   uint16_t crc;
+   char txtt[100];
+
+
+   char tmp[100],tmp1[100];
+   char s[400];
+   struct ATMS * anonym;
+   { /* with */
+      struct ATMS * anonym = &chan[m].atms;
+      if (anonym->rxp==0UL) {
+         anonym->synbuf[anonym->synp] = d;
+         i = anonym->synp;
+         ++anonym->synp;
+         if (anonym->synp>79UL) anonym->synp = 0UL;
+         j = 80UL;
+         normc = 0UL;
+         revc = 0UL;
+         do {
+            --j;
+            if (("01010101010101010101010101010101010101010101010101010101010101010010110111010100"[j]=='1')==anonym->synbuf[i]) ++normc;
+            else ++revc;
+            if (i==0UL) i = 79UL;
+            else --i;
+         } while (!(j==0UL || normc>1UL && revc>1UL));
+         anonym->headok = normc==0UL || revc==0UL;
+         anonym->rev = normc<revc;
+         if (j==0UL) {
+                anonym->rxbuf[0UL]=0x45;            //fill in first 3 bytes )as we lost it for header
+                anonym->rxbuf[1UL]=0xd4;            //recovery of first bytes for crc calcs
+                anonym->rxp = 2UL;
+         }
+
+         anonym->rxbitc = 0UL;
+      }
+      else {
+         anonym->rxbyte = anonym->rxbyte*2UL+1UL*(uint32_t)(d!=anonym->rev);
+         ++anonym->rxbitc;
+         if (anonym->rxbitc>=8UL) {
+            anonym->rxbuf[anonym->rxp] = (char)((uint8_t)anonym->rxbyte);
+            ++anonym->rxp;
+            if (anonym->rxp>=ATMS_FLEN) {                        // if full sentence received
+		anonym->rxbuf[ATMS_FLEN]=0;
+		    crc=anonym->rxbuf[ATMS_FLEN-2]<<8|anonym->rxbuf[ATMS_FLEN-1];
+		    if(crc==crc_atms(anonym->rxbuf+2,ATMS_FLEN-4)){
+
+			
+			    sendATMS(m);
+			    for(t=0;t<ATMS_FLEN;t++){
+				anonym->frame[t]=anonym->rxbuf[t];
+			    }
+
+			    int d,m,y,hr,mn,sec;
+			    float lat,lon,alt;
+			    uint16_t cnt,tmp,sn;
+			    uint64_t tmpl;
+
+			    d=anonym->rxbuf[21]; d>>=1; d&=0x1f;
+			    tmp=(0xff&anonym->rxbuf[22])<<8 | 0xff&anonym->rxbuf[23]; tmp>>=6; y=0x3f&tmp;
+			    m=anonym->rxbuf[23]; m>>=2; m&=0xf;
+    
+			    tmp=(0xff&anonym->rxbuf[21])<<8 | 0xff&anonym->rxbuf[22]; tmp>>=4; hr=0x1f&tmp;
+			    tmp=(0xff&anonym->rxbuf[23])<<8 | 0xff&anonym->rxbuf[24]; tmp>>=5; mn=0x3f&tmp;
+			    tmp=(0xff&anonym->rxbuf[24])<<8 | 0xff&anonym->rxbuf[25]; tmp>>=7; sec=0x3f&tmp;
+
+			    tmp=(0xff&anonym->rxbuf[43])<<8 | anonym->rxbuf[44];  cnt=0x07ff&tmp;
+			    tmp=(0xff&anonym->rxbuf[29])<<16 | (0xff&anonym->rxbuf[30])<<8 | 0xff&anonym->rxbuf[31]; tmp>>=5; alt=0xffff&tmp;
+			    tmpl=(0xff&anonym->rxbuf[40])<<16 | (0xff&anonym->rxbuf[41])<<8 | 0xff&anonym->rxbuf[42]; tmpl>>=6; sn=0xffff&tmpl;
+
+			    tmpl=0xff&anonym->rxbuf[31]; tmpl<<=8; 
+			    tmpl|= 0xff&anonym->rxbuf[32]; tmpl<<=8;   
+			    tmpl|= 0xff&anonym->rxbuf[33]; tmpl<<=8;
+			    tmpl|= 0xff&anonym->rxbuf[34]; tmpl<<=8;
+			    tmpl|= 0xff&anonym->rxbuf[35]; 
+			    tmpl>>=5; 
+			    tmpl&=0xffffffff;
+			    int latdeg = (int)tmpl / 1e6;
+			    float latmin = (float)(tmpl/1e6-latdeg)*100/60.0;
+			    lat = (float)latdeg+latmin;
+
+			    tmpl=0xff&anonym->rxbuf[35]; tmpl<<=8; 
+			    tmpl|= 0xff&anonym->rxbuf[36]; tmpl<<=8;   
+			    tmpl|= 0xff&anonym->rxbuf[37]; tmpl<<=8;
+			    tmpl|= 0xff&anonym->rxbuf[38]; tmpl<<=8;
+			    tmpl|= 0xff&anonym->rxbuf[39]; 
+			    tmpl>>=5; 
+			    tmpl&=0xffffffff;
+			    int londeg = (int)tmpl / 1e6;
+			    float lonmin = (double)(tmpl/1e6-londeg)*100/60.0;
+			    lon = (float)londeg+lonmin;
+			sprintf(txtt,"AT%02i%05u%02i%02i%02i%02i%02i%02i%05.0f%07.0f%08.0f",y,sn,y,m,d,hr,mn,sec,alt,lat*100000,lon*100000);
+			strcpy(anonym->frame,txtt);
+					    
+			    printf("%02i: AT%02u%05u 20%02i-%02i-%02i %02i:%02i:%02i %5u alt:%f lat:%f lon:%f \n",m,y,sn,y,m,d,hr,mn,sec,cnt,alt,lat,lon);
+
+
+		    }
+		    else printf("CRC ERR\n");
+		    
+		anonym->rxp = 0UL;
+            }
+            if (anonym->rxp==40UL) {
+               anonym->bitlev0 = anonym->bitlev;
+                /* save quality before end of shortst frame */
+               anonym->noise0 = anonym->noise;
+            }
+            anonym->rxbitc = 0UL;
+         }
+      }
+   }
+} 
+
+
+static void demodbitATMS(uint32_t m, float u)
+{
+   char d;
+   float ua;
+   struct ATMS * anonym;
+   d = u>=0.0f;
+   { /* with */
+      struct ATMS * anonym = &chan[m].atms;
+//      if(d) printf("1"); else printf("0");
+      demodbyteATMS(m, d);
+      /*quality*/
+      ua = (float)fabs(u)-anonym->bitlev;
+      anonym->bitlev = anonym->bitlev+ua*0.005f;
+      anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+   }
+} 
+
+
+static void demodATMS(float u, uint32_t m)
+{
+   char d;
+   struct ATMS * anonym;
+   { /* with */
+      struct ATMS * anonym = &chan[m].atms;
+      d = u>=0.0f;
+      if (anonym->cbit) {
+         if (chan[m].atms.enabled) demodbitATMS(m, u);
+         if (d!=anonym->oldd) {
+            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
+            else anonym->baudfine -= anonym->pllshift;
+            anonym->oldd = d;
+         }
+         anonym->lastu = u;
+      }
+      else anonym->plld = d;
+      anonym->cbit = !anonym->cbit;
+   }
+} 
+
+
 
 /*SKPP --------------------- */
 
@@ -4205,6 +5278,48 @@ static void Fsk20(uint32_t m)
             anonym->baudfine -= 65536L;
             ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
             demod20(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+} /* end Fsk10() */
+
+static void FskIMS(uint32_t m)
+{
+   float ff;
+   int32_t lim;
+   struct IMS * anonym;
+   { /* with */
+      struct IMS * anonym = &chan[m].ims;
+      lim = (int32_t)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demodIMS(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+} /* end Fsk10() */
+
+static void FskATMS(uint32_t m)
+{
+   float ff;
+   int32_t lim;
+   struct ATMS * anonym;
+   { /* with */
+      struct ATMS * anonym = &chan[m].atms;
+      lim = (int32_t)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demodATMS(ff, m);
          }
          anonym->baudfine += lim;
          lim = 0L;
@@ -5728,6 +6843,10 @@ static void getadc(void)
     struct IMET * anonym8;
     struct MP3 * anonym9;
 
+    struct SKPP * anonym11;
+    struct IMS * anonym12;
+    struct ATMS * anonym13;
+
    c = 0UL;
    mod=0;
    do {
@@ -5783,7 +6902,18 @@ static void getadc(void)
 		anonym2->enabled =0;
 		struct IMET * anonym8 = &chan[chno].imet;
 		anonym8->rxp = 0UL;
-		anonym9->enabled =0;
+		anonym8->enabled =0;
+
+		struct SKPP * anonym11 = &chan[chno].skpp;
+		anonym11->rxp = 0UL;
+		anonym11->enabled =0;
+		struct IMS * anonym12 = &chan[chno].ims;
+		anonym12->rxp = 0UL;
+		anonym12->enabled =0;
+		struct ATMS * anonym13 = &chan[chno].ims;
+		anonym13->rxp = 0UL;
+		anonym13->enabled =0;
+
 
 		chan[chno].freq[0]=adcbuf[pos+2];
 		chan[chno].freq[1]=adcbuf[pos+3];
@@ -5793,7 +6923,6 @@ static void getadc(void)
 		chan[chno].freq[5]=adcbuf[pos+7];
 		chan[chno].freq[6]=0;
 		chan[chno].st=(unsigned int)((adcbuf[pos+8])&0xff)-65;
-
 
 		switch(chan[chno].st){
 		    case 0:
@@ -5805,6 +6934,9 @@ static void getadc(void)
                             anonym5->enabled =1;
                             anonymz->enabled =1;
                             anonym9->enabled =1;
+			    anonym11->enabled =1;
+			    anonym12->enabled =1;
+
 			    break;
 		    case ST_M10:
 		    case ST_M10GT:
@@ -5836,6 +6968,20 @@ static void getadc(void)
 		    case ST_MP3:
 			    anonym9->enabled =1;
 			    break;
+
+
+
+		    case ST_SKP:
+			    anonym11->enabled =1;
+			    break;
+		    case ST_IMS:
+			    anonym12->enabled =1;
+			    break;
+		    case ST_ATMS:
+			    anonym13->enabled =1;
+			    break;
+
+
 		}
 
 		pos+=9;
@@ -5922,6 +7068,9 @@ static void getadc(void)
 	    if (anonym->m10.enabled) Fsk10(c);
 	    if (anonym->m20.enabled) Fsk20(c);
 	    if (anonym->skpp.enabled) FskSKPP(c);
+	    if (anonym->ims.enabled) FskIMS(c);
+	    if (anonym->atms.enabled) FskATMS(c);
+
          }
       }
       if (c==tmp) break;

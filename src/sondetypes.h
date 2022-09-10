@@ -14,6 +14,8 @@
 
 #define ST_DFM15                        15
 #define ST_DFM17                        17
+#define ST_IMS				18
+#define ST_ATMS				19
 
 #define ST_MP3                          20
 #define ST_SKP				40
