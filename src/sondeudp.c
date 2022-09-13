@@ -3723,7 +3723,7 @@ static void demodbyteATMS(uint32_t m, char d)
 			    tmp=(0xff&anonym->rxbuf[24])<<8 | 0xff&anonym->rxbuf[25]; tmp>>=7; sec=0x3f&tmp;
 
 			    tmp=(0xff&anonym->rxbuf[43])<<8 | anonym->rxbuf[44];  cnt=0x07ff&tmp;
-			    tmp=(0xff&anonym->rxbuf[29])<<16 | (0xff&anonym->rxbuf[30])<<8 | 0xff&anonym->rxbuf[31]; tmp>>=5; alt=0xffff&tmp;
+			    tmpl=(0xff&anonym->rxbuf[29])<<16 | (0xff&anonym->rxbuf[30])<<8 | 0xff&anonym->rxbuf[31]; tmpl>>=5; alt=0xffff&tmpl;
 			    tmpl=(0xff&anonym->rxbuf[40])<<16 | (0xff&anonym->rxbuf[41])<<8 | 0xff&anonym->rxbuf[42]; tmpl>>=6; sn=0xffff&tmpl;
 
 			    tmpl=0xff&anonym->rxbuf[31]; tmpl<<=8; 
