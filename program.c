@@ -1,14 +1,30 @@
 //______________________________________________________________________________________________________________________
-//   Program wysyłający powiadomienie na telefon za pośrednictwem Push Bullet (https://www.pushbullet.com)                |
-//   Jeśli sonda meteo znajdzie się w promieniu mniejszym niż wskazany i pozostaje nieruchoma przez czas większy          |
-//   niż wskazany wysyłane jest powiadomienie na urządzenie określone przez token Push Bullet (np. telefon).              |
-//   Do działania wymaga biblioteki libcurl.                                                                              |
-//   Na początku pliku należy wpisać swoje dane - koordynaty (np. Google Maps)                                            |
-//    i token z www.pushbullet.com (Settings->Account->access Tokens). 						          |
-//   Kompilacja do programu wykonywalnego w RPI:                                                                          |
-//     gcc -Wall program.c -o program.out -lcurl -lm                                                                      |
-//   Wynikowy plik wykonywalny program.out można np. wywoływać co określony czas z Crona.                                 |
-//______________________________________________________________________________________________________________________
+//   Program wysyłający powiadomienie na telefon za pośrednictwem Push Bullet (https://www.pushbullet.com)              |
+//   Jeśli sonda meteo znajdzie się w promieniu mniejszym niż wskazany i pozostaje nieruchoma przez czas większy        |
+//   niż wskazany wysyłane jest powiadomienie na urządzenie określone przez token Push Bullet (np. telefon).            |
+//   Do działania wymaga biblioteki libcurl.                                                                            |
+//   Na początku pliku należy wpisać swoje dane - koordynaty (np. Google Maps)                                          |
+//    i token z www.pushbullet.com (Settings->Account->access Tokens). 						        |
+//   Kompilacja do programu wykonywalnego w RPI:                                                                        |
+//     gcc -Wall program.c -o program.out -lcurl -lm                                                                    |
+//   Wynikowy plik wykonywalny program.out można np. wywoływać co określony czas z Crona.                               |
+//															|
+//       INSTALACJA: 													|
+//   -------------------												|
+//   sudo apt update && sudo apt -y upgrade										|
+//   sudo apt install libcurl4												|
+//   cd ~														|
+//   mkdir dist														|
+//   cd dist														|
+//   wget https://raw.githubusercontent.com/SP5MI/spdxl/a344a31a9280edb396bcbc280cfb5b0b337233dc/program.c		|
+//   nano program.c													|
+//   ----------!!!!!!!!!!!!!!!!!!tutaj należy uzupełnić swoje dane!!!!!!!!!!!!!!--------				|
+//   gcc -Wall program.c -o test.out -lcurl -lm										|
+//   crontab -l > mycron												|
+//   echo "*/2  * * * * ~/dist/wczytaj.out 2>&1 | /usr/bin/logger -t DIST" >> mycron					|
+//   crontab mycron													|
+//   rm mycron														|
+//______________________________________________________________________________________________________________________|
 
 #include <stdio.h>
 #include <stdlib.h>
