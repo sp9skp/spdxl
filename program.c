@@ -19,7 +19,7 @@
 //   wget https://raw.githubusercontent.com/SP5MI/spdxl/a344a31a9280edb396bcbc280cfb5b0b337233dc/program.c		|
 //   nano program.c													|
 //   ----------!!!!!!!!!!!!!!!!!!tutaj należy uzupełnić swoje dane!!!!!!!!!!!!!!--------				|
-//   gcc -Wall program.c -o test.out -lcurl -lm										|
+//   gcc -Wall program.c -o program.out -lcurl -lm										|
 //   crontab -l > mycron												|
 //   echo "*/2  * * * * ~/dist/wczytaj.out 2>&1 | /usr/bin/logger -t DIST" >> mycron					|
 //   crontab mycron													|
