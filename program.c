@@ -21,7 +21,7 @@
 //   ----------!!!!!!!!!!!!!!!!!!tutaj należy uzupełnić swoje dane!!!!!!!!!!!!!!--------				|
 //   gcc -Wall program.c -o program.out -lcurl -lm										|
 //   crontab -l > mycron												|
-//   echo "*/2  * * * * ~/dist/wczytaj.out 2>&1 | /usr/bin/logger -t DIST" >> mycron					|
+//   echo "*/2  * * * * ~/dist/program.out 2>&1 | /usr/bin/logger -t DIST" >> mycron					|
 //   crontab mycron													|
 //   rm mycron														|
 //______________________________________________________________________________________________________________________|
