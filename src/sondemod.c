@@ -478,8 +478,8 @@ time_t oldMTime;
 #include<netdb.h> //hostent
 #include<arpa/inet.h>
 
-struct sockaddr_in serv_addr;
-int sockfd, i, slen=sizeof(serv_addr);
+struct sockaddr_in serv_addr,serv_addrtcp;
+int sockfd,socket_fdtcp, i, slen=sizeof(serv_addr);
 char UDPbuf[BUFLEN];
 
 
@@ -659,7 +659,23 @@ int getSKP(){
     }
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
-        printf("err: socket\n");
+        printf("err: socket UDP\n");
+
+
+    struct hostent *server_host;
+    struct sockaddr_in server_address;
+    server_host = gethostbyname("snd.skp.wodzislaw.pl");
+    memset(&serv_addrtcp, 0, sizeof server_address);
+    serv_addrtcp.sin_family = AF_INET;
+    serv_addrtcp.sin_port = htons(9931);
+    memcpy(&serv_addrtcp.sin_addr.s_addr, server_host->h_addr, server_host->h_length);
+
+
+    if ((socket_fdtcp = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        printf("err: socket TCP\n");
+    }
+    connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
+
 
     bzero(&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -669,6 +685,8 @@ int getSKP(){
         fprintf(stderr, "inet_aton() failed\n");
         return(0);
     }
+
+
     return(1);
 }
 
@@ -693,7 +711,7 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
     	    strcpy(Pass,dbPass);
 	str[0]=0;
 
-        sprintf( UDPbuf, "S0;1;6;0;%s;%lf;%lf;%5.1lf;%lu;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
+        sprintf( UDPbuf, "S0;1;7;0;%s;%lf;%lf;%5.1lf;%lu;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
                                 name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,vbat,t1,t2,hum,mycall);
 
     	//wylicznie hasha
@@ -715,6 +733,24 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
 	    printf("send to DB\n");
 
 
+	int res;
+	int error_code;
+	int error_code_size = sizeof(error_code);
+
+	printf("TX0\n");
+	connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
+	write(socket_fdtcp, UDPbuf, sizeof(UDPbuf));
+	close(socket_fdtcp);
+	printf("TX\n");
+/*
+	getsockopt(socket_fdtcp, SOL_SOCKET, SO_ERROR, &error_code, &error_code_size);
+	printf("R1:%i\n",error_code);
+	if(error_code){
+	    res=connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
+	    perror("reconnectTCP");
+	    printf("R2:%i\n",res);
+	}
+*/
     }
 }
 

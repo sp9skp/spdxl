@@ -724,7 +724,7 @@ static void initdfir(DFIRTAB dfirtab, uint32_t fg)
    } /* end for */
 } /* end initdfir() */
 
-
+//pierwsza zmiana
 static void initafir(AFIRTAB atab, uint32_t F0, uint32_t F1, float eq)
 {
    uint32_t f;
@@ -878,6 +878,7 @@ static char packcall(char cs[], uint32_t cs_len,
          goto label;
       }
    }
+//druga zmiana
    else if (cs[i]) {
       packcall_ret = 0;
       goto label;
@@ -1181,6 +1182,7 @@ static void Parms(void)
    struct IMET * anonym8;
    struct MP3 * anonym9;
    struct SKPP * anonym11;
+// a tu troche siana
    struct IMS * anonym12;
    struct ATMS * anonym13;
    err = 0;
@@ -1483,6 +1485,7 @@ static void Parms(void)
             }
             adcrate = cnum;
          }
+//tutaj sie cos wysypalo
          else if (h[1U]=='F') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
@@ -2014,6 +2017,7 @@ static uint16_t crcm10(int32_t len, const char buf[], uint32_t buf_len)
    cs = 0U;
    tmp = len-1L;
    i = 0L;
+//tutaj tez sie chyba cos stalo
    if (i<=tmp) for (;; i++) {
       b = (uint16_t)(uint32_t)(uint8_t)buf[i];
       b = X2C_LSH(b,16,-1)|X2C_LSH(b&0x1U,16,7);
@@ -2317,7 +2321,7 @@ static void decodeframe10(uint32_t m){
              if (dir<0.0) dir = 360.0+dir;
 	 } 
 
-
+//no dobra, dosc tego zartowania
 
     int i,j,k,l;
     unsigned int byte;
@@ -2545,7 +2549,7 @@ float M20get_Temp(uint32_t m) {
     float adc_max = 4095.0; // ADC12
     float x, R;
     float T = 0;    // T/Kelvin
-
+//teraz czas do glowkowania
     struct M20 * anonym = &chan[m].m20;
 
     scT     =  0; //(unsigned char)anonym->rxbuf[0x3E]; // adr_0455h
@@ -2681,6 +2685,7 @@ static void decodeframe20(uint32_t m)
 
 	     if (ci>32767L) ci -= 65536L;
              vn = (double)ci/ 1e2;
+//bociana dziobal szpak
              //ci = (int32_t)m10card(anonym->rxbuf, 70, 0x18, 2L);
 //	     ci=(int32_t)anonym->rxbuf[0x19]<<8 | anonym->rxbuf[0x18];
 	     ci=0xff&anonym->rxbuf[0x18]; ci<<=8;  ci|=0xff& anonym->rxbuf[0x19];
@@ -2837,6 +2842,7 @@ static void demodbit20(uint32_t m, float u, float u0)
       if (anonym->lastmanch==d) {
          anonym->manchestd += (32767L-anonym->manchestd)/16L;
       }
+//a potem byla zmiana ;)
       bit = d!=anonym->lastmanch;
       if (anonym->manchestd>0L) {
          demodbyte20(m, bit);
@@ -3067,7 +3073,7 @@ int poly_divmod(uint8_t p[], uint8_t q[], uint8_t *d, uint8_t *r) {
           r[i] = 0;
       }
   }
-
+//i szpak dziobal bociana
   else if (deg_p < deg_q) {
       for (i = 0; i <= MAX_DEG; i++) d[i] = 0;
       for (i = 0; i <= deg_p; i++) r[i] = p[i]; // r(x)=p(x), deg(r)<deg(q)
@@ -3524,7 +3530,7 @@ static void demodbyteIMS(uint32_t m, char d)
 		anonym->rxbuf[5UL]=0b00110010;
                 anonym->rxp = 6UL;
          }
-
+//potem byly jeszcze dwie takie zmiany ;)
          anonym->rxbitc = 0UL;
       }
       else {
@@ -4284,7 +4290,7 @@ static void demodbytepilot(uint32_t m, char d)
                 cnt++;
 
 
-
+//i kto byl dziobany?
 		if (crc == crc16rev(anonym->rxbuf, 48UL) && lat>0 && lat<89.9 && long0>0 && long0<179.9 && heig>1 && heig<35000) {
 		    anonym->poklat=lat;
 		    anonym->poklon=long0;
@@ -5522,6 +5528,7 @@ int dat_out(uint8_t *dat_bits,uint32_t m) {
 
     fr_id = bits2val(dat_bits+48, 4);
 
+    //printf("DFM FI:%02i ",fr_id);
 
     if (fr_id >= 0  && fr_id <= 8) {
         for (i = 0; i < 13; i++) {
@@ -5790,22 +5797,23 @@ int conf_out(uint8_t *conf_bits,uint32_t m) {
 	}else{
 	    sn2_ch = bits2val(conf_bits, 8);
 	    snt=bits2val(conf_bits+8, 16);
-	    if(sn2_ch!=chan[m].dfm6.SNT) {chan[m].dfm6.SNT=sn2_ch; chan[m].dfm6.SNL=0;chan[m].dfm6.SNH=0; chan[m].dfm6.SN6=0; printf("R3\n");}		//jesli inny typ - reset numeru sondy
+	    if(sn2_ch!=chan[m].dfm6.SNT) {chan[m].dfm6.SNT=sn2_ch; chan[m].dfm6.SNL=0;chan[m].dfm6.SNH=0; chan[m].dfm6.SN6=0; }		//jesli inny typ - reset numeru sondy
 	    switch(bits2val(conf_bits+24, 4)){
 		case 0:
-		    if((snt<<16)!=chan[m].dfm6.SNH) {chan[m].dfm6.SNH=snt<<16; chan[m].dfm6.SN6=0; chan[m].dfm6.ok=0; printf("R0\n");}
+		    if((snt<<16)!=chan[m].dfm6.SNH) {chan[m].dfm6.SNH=snt<<16; chan[m].dfm6.SN6=0; chan[m].dfm6.ok=0;}
 		    else chan[m].dfm6.ok=1;
 		    break;
 		case 1:
-		    if(snt!=chan[m].dfm6.SNL) {chan[m].dfm6.SNL=snt;chan[m].dfm6.SN6=0;  printf("R1\n");}
+		    if(snt!=chan[m].dfm6.SNL) {chan[m].dfm6.SNL=snt;chan[m].dfm6.SN6=0;}
 		    else chan[m].dfm6.ok=1;
 		    break;
 		default:
-		    chan[m].dfm6.SNT=0; chan[m].dfm6.SNL=0; chan[m].dfm6.SNH=0; chan[m].dfm6.SN6=0; chan[m].dfm6.ok=0; printf("R2\n");		// reset
+		    chan[m].dfm6.SNT=0; chan[m].dfm6.SNL=0; chan[m].dfm6.SNH=0; chan[m].dfm6.SN6=0; chan[m].dfm6.ok=0; 		// reset
 	    }
 
+	    //printf("\nSN T:%02x\n",(sn2_ch & 0xFF));
 	    if ((sn2_ch & 0xFF) == 0xAC ) dfm6typ=0x9;				//DFM-9
-	    if ((sn2_ch & 0xFF) == 0xCC ) dfm6typ=0xD;	//DFM17
+	    if ((sn2_ch & 0xFF) == 0xCC || (sn2_ch & 0xFF) == 0xBC) dfm6typ=0xD;	//DFM17
 	    if ((sn2_ch & 0x0F) == 0x0 ) dfm6typ=0xF;				//DFM15
 	
 	    chan[m].dfm6.sonde_typ=dfm6typ;
@@ -6064,7 +6072,7 @@ static void decodeframe6(uint32_t m)
 	  }
 
       }
-
+//i jak koledzy, fajne te zmiany?
    }
 } /* end decodeframe6() */
 
@@ -6600,6 +6608,9 @@ static void demodbit34(uint32_t channel, char d)
          anonym->rxp = 2UL;
          anonym->rxbitc = 0UL;
       }
+
+//ciekawe jak bardzo sie podobaly ;)
+
       else if ((anonym->rxbytec&2097151UL)==3070UL) {
          /*IF NOT verb THEN WrStrLn(""); END; */
          /* c50 0 0000 0000 1011 1111 1110 */
@@ -6903,7 +6914,6 @@ static void getadc(void)
 		struct IMET * anonym8 = &chan[chno].imet;
 		anonym8->rxp = 0UL;
 		anonym8->enabled =0;
-
 		struct SKPP * anonym11 = &chan[chno].skpp;
 		anonym11->rxp = 0UL;
 		anonym11->enabled =0;
@@ -6980,13 +6990,9 @@ static void getadc(void)
 		    case ST_ATMS:
 			    anonym13->enabled =1;
 			    break;
-
-
 		}
 
 		pos+=9;
-		//printf("CH:%i QRG:%s,ST:%d\n",chno,chan[chno].freq,chan[chno].st);
-		//printf(chan[chno].freq);printf("\n");
 	    }
 	 }else if(mod==0){
              adcbufsamps = 0UL;
@@ -7058,7 +7064,7 @@ static void getadc(void)
          struct CHAN * anonym = &chan[c];
          if (anonym->squelch<64UL) {
             /* squelch open */
-            if (anonym->r92.enabled) Fsk(c); // || anonym->r41.enabled || anonym->pils.enabled) Fsk(c);
+            if (anonym->r92.enabled) Fsk(c); 
 	    if (anonym->r41.enabled)  Fsk41(c);
 	    if (anonym->mp3.enabled)  FskMP3(c);
 	    if (anonym->pils.enabled) FskPS(c);
@@ -7111,8 +7117,6 @@ extern int main(int argc, char **argv)
    getst = 0UL;
    afin = 0UL;
    soundbufs = 0UL;
-   /*  IF verb THEN WrStrLn("Frame ID       level-L qual level-R qual") END;
-                */
    adcbufrd = 0UL;
    adcbufsamps = 0UL;
    adcbufsampx = X2C_max_longcard;
