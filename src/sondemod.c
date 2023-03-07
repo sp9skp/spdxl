@@ -651,7 +651,6 @@ unsigned int passAprs(char *pas){
 
 
 int getSKP(){
-
     if(h2ip("snd.skp.wodzislaw.pl",SKPip)){
             fprintf(stderr,"\r\nCan't resolve DNS address\r\n");
             SKPip[0]=0;
@@ -662,20 +661,19 @@ int getSKP(){
         printf("err: socket UDP\n");
 
 
-    struct hostent *server_host;
-    struct sockaddr_in server_address;
-    server_host = gethostbyname("snd.skp.wodzislaw.pl");
-    memset(&serv_addrtcp, 0, sizeof server_address);
-    serv_addrtcp.sin_family = AF_INET;
-    serv_addrtcp.sin_port = htons(9931);
-    memcpy(&serv_addrtcp.sin_addr.s_addr, server_host->h_addr, server_host->h_length);
+//    struct hostent *server_host;
+//    struct sockaddr_in server_address;
+//    server_host = gethostbyname("snd.skp.wodzislaw.pl");
+//    memset(&serv_addrtcp, 0, sizeof server_address);
+//    serv_addrtcp.sin_family = AF_INET;
+//    serv_addrtcp.sin_port = htons(9931);
+//    memcpy(&serv_addrtcp.sin_addr.s_addr, server_host->h_addr, server_host->h_length);
 
 
-    if ((socket_fdtcp = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        printf("err: socket TCP\n");
-    }
-    connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
-
+//    if ((socket_fdtcp = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+//        printf("err: socket TCP\n");
+//    }
+//    connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
 
     bzero(&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -737,11 +735,12 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
 	int error_code;
 	int error_code_size = sizeof(error_code);
 
-	printf("TX0\n");
-	connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
-	write(socket_fdtcp, UDPbuf, sizeof(UDPbuf));
-	close(socket_fdtcp);
-	printf("TX\n");
+//	printf("TX0:%s:%u\n",UDPbuf,strlen(UDPbuf));
+//	connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
+
+//	write(socket_fdtcp, UDPbuf, sizeof(UDPbuf));
+//	close(socket_fdtcp);
+//	printf("TX\n");
 /*
 	getsockopt(socket_fdtcp, SOL_SOCKET, SO_ERROR, &error_code, &error_code_size);
 	printf("R1:%i\n",error_code);
