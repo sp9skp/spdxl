@@ -654,7 +654,7 @@ int getSKP(){
     if(h2ip("snd.skp.wodzislaw.pl",SKPip)){
             fprintf(stderr,"\r\nCan't resolve DNS address\r\n");
             SKPip[0]=0;
-            return 0;
+            
     }else{
 	sprintf(SKPip,"155.133.36.21");
     }
