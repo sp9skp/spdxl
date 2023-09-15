@@ -651,13 +651,14 @@ unsigned int passAprs(char *pas){
 
 
 int getSKP(){
-    if(h2ip("snd.skp.wodzislaw.pl",SKPip)){
+/*    if(h2ip("snd.skp.wodzislaw.pl",SKPip)){
             fprintf(stderr,"\r\nCan't resolve DNS address\r\n");
             SKPip[0]=0;
             
     }else{
+*/
 	sprintf(SKPip,"155.133.36.21");
-    }
+//    }
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
         printf("err: socket UDP\n");
