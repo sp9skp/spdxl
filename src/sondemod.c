@@ -664,6 +664,16 @@ int getSKP(){
         printf("err: socket UDP\n");
 
 
+    bzero(&serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    if (inet_aton(SKPip, &serv_addr.sin_addr)==0)
+    {
+        fprintf(stderr, "inet_aton() failed\n");
+        return(0);
+    }
+
+
 //    struct hostent *server_host;
 //    struct sockaddr_in server_address;
 //    server_host = gethostbyname("snd.skp.wodzislaw.pl");
@@ -678,14 +688,6 @@ int getSKP(){
 //    }
 //    connect(socket_fdtcp, (struct sockaddr *)&serv_addrtcp, sizeof serv_addrtcp);
 
-    bzero(&serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-    if (inet_aton(SKPip, &serv_addr.sin_addr)==0)
-    {
-        fprintf(stderr, "inet_aton() failed\n");
-        return(0);
-    }
 
 
     return(1);
@@ -724,12 +726,15 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
     	strcat(UDPbuf,";");
     	strcat(UDPbuf,hash);
 
-	if(SKPip[0]==0)
+	if(SKPip[0]==0){
 	    ret=getSKP();
-	if(ret==0) return;
+	    if(ret==0) return;
+	}
 
-        if (sendto(sockfd, UDPbuf, BUFLEN, 0, (struct sockaddr*)&serv_addr, slen)==-1)
+        if (sendto(sockfd, UDPbuf, BUFLEN, 0, (struct sockaddr*)&serv_addr, slen)==-1){
             printf("err: sendto()");
+	    getSKP();
+	}
 	else
 	    printf("send to DB\n");
 
@@ -4604,6 +4609,9 @@ extern int main(int argc, char **argv)
    char i;
 
    SKPip[0]=0;
+//    sprintf(SKPip,"155.133.36.21");
+
+
 
    for(i=0;i<DBS_SIZE;i++) memset(&dBs[i],0,sizeof(struct DBS));
 
