@@ -1,7 +1,7 @@
 <?php
 $addn=0;
 $save=0;
-
+$fil="";
     $i=0;
     $fil = scandir('CFG');
     foreach ($fil as $key => $value) {

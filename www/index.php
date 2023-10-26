@@ -77,7 +77,7 @@ function getDataWf(){
 
 
 if($p=='0' || $p=='') echo "<p id=\"switch_txt\"></p>";
-if($p>1) include 'sdr.php'; 
+if($p>1 && $p!="A") include 'sdr.php'; 
 if($p=='A') echo "<p id=\"switch_txt\"></p>";
 
 ?>

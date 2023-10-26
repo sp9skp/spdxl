@@ -38,29 +38,29 @@ function GreenYellowRed($number) {
 function printSDR($fil){
     if (($handle = fopen($fil, "r")) !== FALSE) {
 	$line = fgets($handle);
-	if($line{2}=='1')
-	    echo "<table width=380 cellspacing=0><tr><th bgcolor=#FFFFAA>Freq:</th><td bgcolor=#FFFFAA>".$line{2}.$line{3}.$line{4}.$line{5}.".".$line{6}.$line{7}." MHz</td>";
+	if($line[2]=='1')
+	    echo "<table width=380 cellspacing=0><tr><th bgcolor=#FFFFAA>Freq:</th><td bgcolor=#FFFFAA>".$line[2].$line[3].$line[4].$line[5].".".$line[6].$line[7]." MHz</td>";
 	else
-	    echo "<table width=380 cellspacing=0><tr><th bgcolor=#FFFFAA>Freq:</th><td bgcolor=#FFFFAA>".$line{2}.$line{3}.$line{4}.".".$line{5}.$line{6}.$line{7}." MHz</td>";
+	    echo "<table width=380 cellspacing=0><tr><th bgcolor=#FFFFAA>Freq:</th><td bgcolor=#FFFFAA>".$line[2].$line[3].$line[4].".".$line[5].$line[6].$line[7]." MHz</td>";
 	$line = fgets($handle);
-	echo "<th bgcolor=#AAFFAA>PPM:</th><td bgcolor=#AAFFAA>".$line{2}.$line{3}."</td>";
+	echo "<th bgcolor=#AAFFAA>PPM:</th><td bgcolor=#AAFFAA>".$line[2].$line[3]."</td>";
 	$line = fgets($handle);
-	echo "<th bgcolor=#11FFFF>Gain:</th><td bgcolor=#11FFFF>".$line{2}.$line{3}."</td></tr></table><br>";
+	echo "<th bgcolor=#11FFFF>Gain:</th><td bgcolor=#11FFFF>".$line[2].$line[3]."</td></tr></table><br>";
 
 	echo "<table>";
 	while (($line = fgets($handle)) !== false) {
 	    $arr = explode(";",$line);
 	    echo "<tr>";
-	    $p=ord($line{16});
+	    $p=ord($line[16]);
 	    $off=0;
-	    if($line{3}=='1'){
-		echo "<th>".$line{0}.$line{1}." : ".$line{3}.$line{4}.$line{5}.$line{6}.".".$line{7}.$line{8}." MHz</td><td align=right>".intval($arr[2])."kHz</td><th> (".$p."dB)</th>";
+	    if($line[3]=='1'){
+		echo "<th>".$line[0].$line[1]." : ".$line[3].$line[4].$line[5].$line[6].".".$line[7].$line[8]." MHz</td><td align=right>".intval($arr[2])."kHz</td><th> (".$p."dB)</th>";
 		$off=1;
 		}
 	    else
-		echo "<th>".$line{0}.$line{1}." : ".$line{3}.$line{4}.$line{5}.".".$line{6}.$line{7}.$line{8}." MHz</td><td align=right>".intval($arr[2])."kHz</td><th> (".$p."dB)</th>";
+		echo "<th>".$line[0].$line[1]." : ".$line[3].$line[4].$line[5].".".$line[6].$line[7].$line[8]." MHz</td><td align=right>".intval($arr[2])."kHz</td><th> (".$p."dB)</th>";
 	    for($i=0;$i<16;$i++){
-		$p=ord($line{$i+16+$off});
+		$p=ord($line[$i+16+$off]);
 		echo '<td bgcolor="#'.GreenYellowRed($p*1.33).'">&nbsp;</td>';
 	    }
 	    echo "</tr>";
