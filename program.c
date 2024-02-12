@@ -117,10 +117,6 @@ int libcurl(char *seria, double s_odleglosc, char * push_id)
    return 0;
 }
 
-
-
-
-
 void check(char **numer, double dystans, unsigned long czas, int qth_odl, int secs)
 {
    FILE *fp;
@@ -189,3 +185,4 @@ fclose(fp);
 
 printf("=^..^= Program uruchomiono =^..^=\n");
 }
+//
