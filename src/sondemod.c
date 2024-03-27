@@ -657,7 +657,8 @@ int getSKP(){
             
     }else{
 */
-	sprintf(SKPip,"194.140.233.120");
+	//sprintf(SKPip,"194.140.233.120");
+	sprintf(SKPip,"10.0.0.1");
 //    }
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
@@ -3618,7 +3619,7 @@ static void decodem20(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
    float vbat,temp1,temp2;
     char to[1200];
     uint32_t time0;
-
+    uint8_t psb=ST_M20;
 
 
 
@@ -3684,7 +3685,7 @@ static void decodem20(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
 
          if(isNDig(tmp)) return(0);
         temp2=atof(tmp);
-
+	printf("VBAT:%f\n",vbat);
 
       pc = pcontextm20;
       pc0 = 0;
@@ -3732,14 +3733,25 @@ static void decodem20(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t 
          osi_WrStr(" ", 2ul);
       }
 
+    if(vbat>20.0) {
+        vbat-=50.0;
+        psb=ST_M20PIL;
+    }
+
+
    if (pc && lat>0 && lat<90 && lon>0 && alt<45000 ) {
 
-      if (sondeaprs_verb) 
-	printf("M20: (%s) %s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f\n",usercall,nam,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2);
+      if (sondeaprs_verb) {
+	if(psb==ST_M20PIL)
+	    printf("PSM20");
+	else
+	    printf("M20");
+	printf(": (%s) %s,%012lu,%09.5f,%010.5f,%05.0f,%03.0f,%05.1f,%05.1f,%05.2f,%06.1f,%06.1f\n",usercall,nam,time0,lat,lon,alt,dir,v,vv,vbat,temp1,temp2);
+      }
 
-      store_sonde_db( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,ST_M20,0,0,0,0,0.0,frq,vbat,temp1,temp2,0);
-      store_sonde_rs( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,ST_M20,0,0,0,0,0.0,frq,vbat,temp1,temp2,0,usercall);
-      if(saveLog) save_Slog( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,ST_M20,0,0,0,0,0.0,frq,vbat,temp1,temp2,0);
+      store_sonde_db( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,psb,0,0,0,0,0.0,frq,vbat,temp1,temp2,0);
+      store_sonde_rs( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,psb,0,0,0,0,0.0,frq,vbat,temp1,temp2,0,usercall);
+      if(saveLog) save_Slog( pc->name,pc->framenum,lat* 1.7453292519943E-2,lon* 1.7453292519943E-2,alt,v,dir,vv,psb,0,0,0,0,0.0,frq,vbat,temp1,temp2,0);
       pc->framesent = 1;
 
     }

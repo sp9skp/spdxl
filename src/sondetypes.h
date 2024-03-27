@@ -18,6 +18,8 @@
 #define ST_ATMS				19
 
 #define ST_MP3                          20
+#define ST_M20PIL                       21
+
 #define ST_SKP				40
 
 
