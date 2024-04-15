@@ -704,6 +704,9 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
     char cp=strlen(mycall);
     double dlat,dlon;
 
+
+    if(lat<-90 || lat>90 || lon < -180 || lon >180 || alt>45000 || alt <150 || climb >15 || climb < -130 || speed >100) return;
+
     if((dp>4)||(cp>3)){
 
 	if(dp<4){	//jesli nie ma mojego hasla 
@@ -714,7 +717,7 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
     	    strcpy(Pass,dbPass);
 	str[0]=0;
 
-        sprintf( UDPbuf, "S0;1;7;0;%s;%lf;%lf;%5.1lf;%lu;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
+        sprintf( UDPbuf, "S0;1;8;0;%s;%lf;%lf;%5.1lf;%lu;%3.1f;%3.0f;%3.1f;%4.1f;%4.1f;%u;%i;%i;%i;%7.3f;%3.2f;%3.1f;%3.1f;%3.0f;%s",
                                 name,lat,lon,alt,frameno,speed,dir,climb,press,ozon,swv,bk,typ,aux,frq,vbat,t1,t2,hum,mycall);
 
     	//wylicznie hasha
@@ -764,6 +767,8 @@ void  saveMysql( char *name,uint32_t frameno, double lat, double lon, double alt
 
 void save_Slog( char *name,uint32_t frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
 
+    if(lat<-90 || lat>90 || lon < -180 || lon >180 || alt>45000 || alt <150 || climb >15 || climb < -130 || speed >100) return;
+
     int i,newS=1;
     time_t minTime=time(NULL),difftime,lTime=time(NULL);
     struct tm* tm_info;
@@ -795,6 +800,8 @@ void save_Slog( char *name,uint32_t frameno, double lat, double lon, double alt,
 }
 
 int store_sonde_db( char *name,uint32_t frameno, double lat, double lon, double alt, double speed, double dir, double climb,int typ,char bk, unsigned int swv,double ozon, char aux, double press,  float frq, float vbat, float t1, float t2, float hum){
+
+    if(lat<-90 || lat>90 || lon < -180 || lon >180 || alt>45000 || alt <150 || climb >15 || climb < -130 || speed >100) return;
 
     int i,newS=1;
     time_t minTime=time(NULL),difftime,lTime=time(NULL);
@@ -2680,7 +2687,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
 
     tmp[0]=rxb[22];    tmp[1]=rxb[23];    tmp[2]=rxb[24];    tmp[3]='.';    tmp[4]=rxb[25];    tmp[5]=rxb[26];
     tmp[6]=rxb[27];    tmp[7]=rxb[28];    tmp[8]=rxb[29];    tmp[9]=rxb[30];    tmp[10]=0;
-    lon=atof(tmp)*1.7453292519943E-2;
+    lon=atof(tmp)*1.7453292519943E-2; 
 
     tmp[0]=rxb[31];    tmp[1]=rxb[32];    tmp[2]=rxb[33];    tmp[3]=rxb[34];    tmp[4]=rxb[35];    tmp[5]=0;
     alt=atoi(tmp);
@@ -2725,6 +2732,8 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     sec= atoi(tmp);
 
     tmp[0]=rxb[83]; tmp[1]=rxb[84]; tmp[2]=rxb[85]; tmp[3]=rxb[86]; tmp[4]=rxb[87]; tmp[5]=0;
+
+
 
    getcall(tmp, 6, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
@@ -2789,14 +2798,10 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len, uint32_t ip, uint32_t
     { struct CONTEXTDFM6 * anonym = X2C_CHKNIL(pCONTEXTDFM6,pc);
 
 
-
-        if(lat>0 && lon>0 && alt>=0){ // && ok>0
-
             anonym->lastsent = osic_time();
             store_sonde_db(id+2,frno,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0); 
             store_sonde_rs(id+2,frno,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0,usercall); 
 	    if(saveLog) save_Slog(id+2,frno,lat,lon,alt,vH,Dir,vV,typm,2,0,0.0,0,0.0,frq,Vcc,T,T1,0); 
-        }
     }
     
 
