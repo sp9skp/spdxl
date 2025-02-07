@@ -3105,7 +3105,10 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    }
    p = 57UL;
 
-
+//    printf("\n___LEN:%05i ",rxb_len);
+//    for(uint32_t i=0;i<rxb_len-1;i++)
+//      printf("%02x:",0xff&rxb[i]);
+     
 
    if (sondeaprs_verb) osi_WrStr("R41 ", 5ul);
    for (;;) {
@@ -3296,16 +3299,39 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
       else if (typ=='}') {
       }
       else if (typ=='{') {
-//	printf("POSRS41\n");
-         /*             WrStrLn("7D frame"); */
-         /*             WrStrLn("7B frame"); */
-    //     if (pc) {
-	    if(p==261) typs=ST_RS41SGM;
+/*          
+            uint32_t tlen=0xff&rxb[p-1]+3;
+            printf("\nSF:%02x L:%03u ",0xff&typ,tlen);
+            for(uint32_t i=p-1;i<p-1+tlen;i++)
+                printf("%02x:",0xff&rxb[i]);
+            printf("\n");       
+*/
+            if(p==261) typs=ST_RS41SGM;
             posrs41(rxb, rxb_len, p, &lat, &long0, &heig, &speed, &dir, &climb);
             pc->hp = altToPres(heig);
-                /* make hPa out of gps alt for ozone */
-    //     }
       }
+      else if ((0xff&typ)==0x82) {
+/*
+            uint32_t tlen=0xff&rxb[p-1]+3;
+            printf("\nSF:%02x L:%03u ",0xff&typ,tlen);
+            for(uint32_t i=p-1;i<p-1+tlen;i++)
+                printf("%02x:",0xff&rxb[i]);
+            printf(" ");            
+*/
+            if(p==261) typs=ST_RS41SGM;
+            posrs41(rxb, rxb_len, p, &lat, &long0, &heig, &speed, &dir, &climb);
+            pc->hp = altToPres(heig);
+      }
+      else if ((0xff&typ)==0x83) {
+/*
+            uint32_t tlen=0xff&rxb[p-1]+3;
+            printf(" SF:%02x L:%03u ",0xff&typ,tlen);
+            for(uint32_t i=p-1;i<p-1+tlen;i++)
+                printf("%02x:",0xff&rxb[i]);
+            printf("  %f,%f,%f,%f,%f,%f\n",lat/1.7453292519943E-2, long0/1.7453292519943E-2, heig, speed, dir, climb);
+*/
+      }
+
       else if (typ=='~') {
          /* external device */
          if (len==23UL) {
@@ -3362,6 +3388,16 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             }
          }
       }
+     else {
+/*
+            uint32_t tlen=0xff&rxb[p-1]+3;
+            printf("\nUN:%02x L:%03u ",0xff&typ,tlen);
+            for(uint32_t i=p-1;i<p-1+tlen;i++)
+                printf("%02x:",0xff&rxb[i]);
+            printf("\n");
+*/
+      }
+
 /*      else if (typ=='v') {
       }
       else {
@@ -3369,6 +3405,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
          break;
       }
 */
+
       if (typ=='v') break;
       p += len;
    }

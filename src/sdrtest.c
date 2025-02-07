@@ -789,7 +789,7 @@ static void rdconfig(void)
          ++p;
       }
       osic_Close(fd0);
-
+/*
       if(fmx>403150000 && fmn<403150000){
 	    freq[freqc].hz = (uint32_t)X2C_TRUNCC(403150000+0.5,0UL, 0xFFFFFFFF);
             freq[freqc].afc = 20;
@@ -799,7 +799,7 @@ static void rdconfig(void)
 	    freq[freqc].st=ST_SKP;
 	    ++freqc;
       }
-      
+*/      
    }
    else printf("config file not readable\n");
    centerfreq(freq, 64ul);

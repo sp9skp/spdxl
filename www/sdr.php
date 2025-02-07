@@ -1,7 +1,7 @@
 <?php
 $addn=0;
 $save=0;
-$fil="";
+
     $i=0;
     $fil = scandir('CFG');
     foreach ($fil as $key => $value) {
@@ -67,8 +67,8 @@ if ($sav){
 
 <?php
 
-
-if (($handle = fopen($fil, "r")) !== FALSE) {
+if(is_string($fil)>3){
+    if (($handle = fopen($fil, "r")) !== FALSE) {
   while (($data = fgetcsv($handle, 1000, " ")) !== FALSE) {
     if ($data[0]=='p' && $data[1]=='5')
 	$ppm=$data[2];
@@ -77,6 +77,7 @@ if (($handle = fopen($fil, "r")) !== FALSE) {
   }
 }
 fclose($handle);
+}
 
 echo '<table><tr><th>PPM:</th><td><input type="text" name="ppm" maxlength="2" size="1" value='.$ppm.'></td></tr>';
 echo '<tr><th>GAIN:</th><td><input type="text" name="gain" maxlength="2" size="1" value='.$gain.'></td></tr></table>';

@@ -113,8 +113,7 @@ static char sondeudp_DATAFRAME = 'i';
   rs41x 0x86, 0x35, 0xf4, 0x40, 0x93, 0xdf, 0x1a, 0x60
   rs41  0x10, 0xB6, 0xCA, 0x11, 0x22, 0x96, 0x12, 0xF8
 */
-#define sondeudp_RHEAD41 "000010000110110101010011100010000100010001101001010\
-0100000011111"
+#define sondeudp_RHEAD41 "0000100001101101010100111000100001000100011010010100100000011111"
 
 static uint8_t sondeudp_EXOR41[64] = {150U,131U,62U,81U,177U,73U,8U,152U,
                 50U,5U,89U,14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,93U,
@@ -6939,8 +6938,9 @@ static void getadc(void)
                             anonym5->enabled =1;
                             anonymz->enabled =1;
                             anonym9->enabled =1;
-			    anonym11->enabled =1;
+			    anonym11->enabled =0;
 			    anonym12->enabled =1;
+			    anonym13->enabled =1;
 
 			    break;
 		    case ST_M10:
