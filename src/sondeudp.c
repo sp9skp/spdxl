@@ -6949,6 +6949,7 @@ static void getadc(void)
 			    anonym6->enabled =1;
 			    break;
 		    case ST_M20:
+		    case ST_M20PIL:
 			    anonym7->enabled =1;
 		    case ST_C34:
 		    case ST_C50:
